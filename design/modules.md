@@ -1,107 +1,93 @@
 # 模块设计
 
-## 公共方法
+本文件描述模块职责与调用边界，细节约束与检查点见 [design/constraints.md](constraints.md)。
 
-- listAllDirsByDir 给定文件夹路径，列出文件夹下所有子文件夹
-- listAllFilesByDir 给定文件夹路径，列出文件夹下所有子文件
-- readSkillByDir 给定文件夹路径，读取 SKILL.md 文件并输出结果（名称、描述、元信息，或是发现错误）
-- checkSkillDir 给定技能文件夹路径，检查其是否为有效技能文件夹（包含有效的 skill.md 文件）
-- checkSymlink 给定符号链接路径，检查符号链接是否有效
-  - 检查符号链接指向的文件夹是否为有效技能文件夹
-- createSymlink 给定源路径和目标路径，创建符号链接（考虑 Windows 上使用 junction）
-- deleteSymlink 给定符号链接路径，删除符号链接
-- getAgentConfigDir 给定智能体/IDE 名称，返回其对应的配置目录路径（或是无需配置，如 OpenClaw 完全不用任何配置）
-- guessAgent 给定项目根目录，推测用户使用的智能体/IDE（根据配置目录是否存在进行推测）
-  - 调用 listAllDirsByDir 方法检查常见智能体/IDE 的配置目录是否存在
-  - 特殊情况是 copilot，需额外检查 `.github/` 目录下是否存在 `copilot-instructions.md` 文件或 `skills/` 文件夹
-- readJSONFile 给定文件路径，读取并解析 JSON 文件
-  - 用 foreslash 的 tryit 包裹为 error-first 风格
-- writeJSONFile 给定文件路径和数据，写入 JSON 文件
-- updateJSONFile 给定文件路径和数据，增量更新 JSON 文件（合并已有数据）
-- runCommand 给定命令和选项，在子进程中运行 shell 命令并返回结果
-- info/subInfo/warn/success/error 日志打印方法
+## 术语与原则
+
+- 唯一真源：项目根目录的 `skills/`。
+- 技能名称必须等于技能文件夹名。
+- 来自 npm/子包/安装的技能，统一以 `skills/` 为准；冲突由用户决策。
+- 不做不可恢复操作：默认不覆盖/删除非符号链接的技能目录，对于非符号链接的目录，即使删除也是移动到回收站。
+- 发生冲突且无法继续时，记录日志并报错退出。
+
+## 公共方法（utils）
+
+- `listAllDirsByDir(dir)` 列出指定目录下的一层子文件夹
+- `listAllFilesByDir(dir)` 列出指定目录下的一层子文件
+- `readSkillByDir(dir)` 读取 `SKILL.md` 并返回 `name`/`description`/`metadata` 或错误信息
+- `checkSkillDir(dir)` 判断是否为有效技能文件夹（包含有效的 `SKILL.md`）
+- `checkSymlink(path)` 判断符号链接是否有效，且目标为有效技能文件夹
+- `createSymlink(source, target)` 创建符号链接；Windows 使用 `junction`
+- `deleteSymlink(path)` 删除符号链接
+- `getAgentConfigDir(agent)` 返回智能体/IDE 配置目录
+- `guessAgent(rootDir)` 推测当前使用的智能体/IDE
+  - 依据配置目录是否存在
+  - copilot 额外检查 `.github/copilot-instructions.md` 或 `.github/skills/`
+- `readJSONFile(path)` 读取并解析 JSON（error-first）
+- `writeJSONFile(path, data)` 写入 JSON
+- `updateJSONFile(path, data)` 浅合并更新，等同于 `Object.assign`
+- `runCommand(cmd, options)` 运行 shell 命令并返回结果
+- `info/subInfo/warn/success/error` 日志打印
 
 ## 配置模块 config
 
-用于读取和修改配置文件 `skills-manager-config.json`
+负责读取和写入 `skills-manager-config.json`。
 
-其他所有模块获取、修改配置信息均经过此模块
-
-此模块返回的值**永远**是齐全的（没配置的字段也会有默认值）
+- 返回值永远完整（缺省字段补默认值）
+- 写入为浅合并覆盖，`skillDisabled` 与 `installSources` 由业务模块提供完整值
+- 并发写入不做处理，直接报错
 
 | 配置项 | 类型 | 默认值 | 说明 |
 | ------ | ---- | ------ | ---- |
-| `showPrompt` | `boolean` | `true` | 没有推测出智能体/IDE时，是否显示交互式提示 |
-| `scanNpm` | `boolean` | `true` | 是否扫描 `node_modules/` 目录 |
-| `scanPackages` | `boolean` | `true` | 是否扫描 `packages/` 目录 |
-| `cleanLinks` | `boolean` | `true` | 扫描时是否清理失效的符号链接 |
-| `defaultAgents` | `string[]` | `[]` | 默认目标智能体/IDE 列表，没有推测出智能体/IDE时，若此表有值则使用该列表，且**不会显示交互式提示** |
-| `skillLinkPrefixNpm` | `string` | `"npm-"` | 技能符号链接的前缀，例如设置为 `"np-"` 后，`some-skill` 技能的符号链接将命名为 `np-some-skill` |
-| `skillLinkPrefixPackage` | `string` | `"package-"` | 技能符号链接的前缀，例如设置为 `"pkg-"` 后，`some-skill` 技能的符号链接将命名为 `pkg-some-skill` |
-| `skillDisabled` | `Record<string, string[]>` | `{}` | 已删除的技能列表，键为技能名称，值为已删除该技能的智能体/IDE 列表，例如：`{ "some-skill": ["cursor", "copilot"] }` 表示 `some-skill` 技能在 `cursor` 和 `copilot` 智能体/IDE 中已被删除，如果值为空数组则表示该技能在所有智能体/IDE 中已被删除 |
-| `installSources` | `Record<string, string[]>` | `[]` | 已安装的技能来源列表，键为技能来源，值为从该来源安装的技能列表，工具会记录通过 `skills-manager install` 指令安装的技能来源 |
-
-### 修改配置
-
-用户指定配置项和值，调用此方法修改配置文件，如果不存在则创建，新创建的配置文件应该只包含需要修改的项
-
-不修改 `skillDisabled`、`installSources` 配置项，该配置项由工具自动维护
+| `showPrompt` | `boolean` | `true` | 未推测出智能体/IDE时是否提示 |
+| `scanNpm` | `boolean` | `true` | 是否扫描 `node_modules/` |
+| `scanPackages` | `boolean` | `true` | 是否扫描 `packages/` |
+| `cleanLinks` | `boolean` | `true` | 扫描时是否清理失效链接 |
+| `defaultAgents` | `string[]` | `[]` | 默认目标智能体/IDE 列表 |
+| `skillLinkPrefixNpm` | `string` | `"npm-"` | npm 技能链接前缀 |
+| `skillLinkPrefixPackage` | `string` | `"package-"` | 子包技能链接前缀 |
+| `skillDisabled` | `Record<string, string[]>` | `{}` | 禁用列表，值为空数组表示对所有智能体禁用 |
+| `installSources` | `Record<string, string[]>` | `{}` | 来源 -> 技能名列表 |
 
 ## 智能体/IDE 模块 agents
 
-此模块用于识别智能体/IDE，返回其配置目录
+- 内置已知智能体/IDE 列表（名称、配置目录、推测依据）
+- OpenClaw 无需配置目录，忽略推测
+- Copilot 需检查 `.github/copilot-instructions.md` 或 `.github/skills/`
 
-- guessAgent 方法依赖此模块
-- 此模块内部配置一套已知智能体/IDE 列表，包含名称、配置目录路径、推测依据等信息
-- 特殊情况 OpenClaw，无需任何配置目录，技能直接放在项目根目录的 `skills/` 目录下，所以内部直接忽略此智能体/IDE
-- 特殊情况 copilot，需额外检查 `.github/` 目录下是否存在 `copilot-instructions.md` 文件或 `skills/` 文件夹
-
-传入项目根目录路径，返回已识别的智能体/IDE 列表
+输入项目根目录，返回识别到的智能体/IDE 列表。
 
 ## 扫描模块 scan
 
-用于路径扫描，输入根目录和配置选项，输出技能列表（包括名称、描述、元信息、路径）
+### 核心扫描
 
-### 核心扫描模块
+输入路径，扫描一层子目录中的 `*/skills/`：
 
-输入路径，扫描路径下所有 `*/skills/` 文件夹
+- 仅一层，不深入更深层目录
+- 进入每个 `skills/`，扫描其下所有技能文件夹
+- 读取 `SKILL.md`（兼容大小写）
+- 解析名称、描述、元信息
+- 无效技能写入 debug 日志并跳过
 
-- 仅一层，比如输入路径 `A/` 其下有子文件夹 `B/` 和 `C/`，则扫描 `A/B/skills/` 和 `A/C/skills/` 文件夹，不继续深入扫描 `A/B/D/skills/` 等更深层次的文件夹
+输出技能列表（名称、描述、元信息、路径、来源类型）。
 
-进入每个 `skills/` 文件夹，扫描其下所有技能文件夹
+### 外壳逻辑
 
-进入每个技能文件夹，读取其 `skill.md` 文件（可能存在不同的大小写文件名需要兼容），解析技能名称、描述、元信息
-
-- 若 `skill.md` 文件缺失或无效，则跳过该技能文件夹并记录错误日志
-
-输出技能列表，包含技能名称、描述、元信息、路径等
-
-### 核心扫描模块外壳
-
-用于处理配置选项，调用核心扫描模块
-
-需要处理 `node_modules/`、`packages/` 目录的扫描逻辑
-
-其中 `node_modules/` 目录需要处理命名空间包 `/@XXX/YYY` 的情况
-
-调用核心扫描模块之后，合并所有扫描结果，输出到 `skills/` 目录下（包括创建符号链接）
-
-获取目标智能体/IDE （配置文件、命令行参数、guessAgent 方法猜测），没有获取到的话弹出交互式提示
-
-获取目标智能体/IDE 的配置目录路径（可能存在多个）
-
-扫描配置目录路径，获取已经安装的技能（包括符号链接）
-
-比对扫描结果和已经安装的技能，删除多余的符号链接，创建缺失的符号链接，更新变更的技能符号链接（覆盖同名）
-
-- 创建符号链接前需要读取配置 `skillDisabled`，跳过被禁用的技能（如果是所有智能体/IDE 都禁用的技能，则连 `skills/` 目录下的符号链接也删除）
-- 如果出现同名技能冲突，打印错误日志并跳过该 智能体/IDE
+- 根据配置处理 `node_modules/` 与 `packages/` 的扫描
+- 处理 `node_modules/@scope/name` 形式
+- 合并扫描结果后写入根目录 `skills/`（创建符号链接）
+- 获取目标智能体/IDE：配置、命令行、`guessAgent`；仍为空则提示
+- 扫描目标配置目录，得到已安装技能
+- 对比并同步：删除多余链接、创建缺失链接、更新变更链接
+  - 读取 `skillDisabled` 跳过被禁用技能
+  - 若目标为真实目录则不覆盖，记录 debug 日志并退出
+- 扫描过程输出进度，避免无响应感知
 
 ## 新增模块 add
 
-读取配置 `skillLinkPrefixNpm` 和 `skillLinkPrefixPackage` 获取符号链接前缀，新增技能的名称前缀不得为这两个前缀之一
-
-在 `skills/` 目录下创建同名技能文件夹，并创建 `SKILL.md` 文件模板
+- 技能名不得以 `skillLinkPrefixNpm` 或 `skillLinkPrefixPackage` 开头
+- 技能名必须等于文件夹名且合法（不含路径分隔符等非法字符）
+- 在 `skills/` 下创建同名目录并生成 `SKILL.md`
 
 ```markdown
 ---
@@ -112,121 +98,87 @@ metadata:
 ---
 ```
 
-获取目标智能体/IDE （配置文件、命令行参数、guessAgent 方法猜测），没有获取到的话弹出交互式提示
+- 获取目标智能体/IDE：配置、命令行、`guessAgent`；仍为空则提示
+- 对未被选中的智能体写入 `skillDisabled`
+- 创建符号链接到所有目标配置目录
+- 若同名目录已存在（无论是否为符号链接）则记录 debug 日志并退出
 
-- 无论如何都应该运行 guessAgent 方法猜测，如果配置文件或命令行参数规定了范围，且某个猜测出来的智能体/IDE 不在配置文件、命令行参数获取的值中，则编辑配置 `skillDisabled` ，将该技能在该智能体/IDE 中标记为禁用
+## 删除/禁用/启用模块
 
-获取目标智能体/IDE 的配置目录路径（可能存在多个）
+将“删除”和“禁用/启用”拆分为不同功能：
 
-符号链接上面创建的技能文件夹到所有目标智能体/IDE 的配置目录路径中
+- **删除**：仅适用于手动创建的本地技能（非 npm、非子包、非安装来源）
+- **禁用**：适用于任何来源，支持“全局”或“按智能体”禁用
+- **启用**：从 `skillDisabled` 中移除禁用记录，并恢复符号链接
 
-- 如果出现同名技能冲突，打印错误日志并跳过该 智能体/IDE
+### 删除
 
-## 删除 del
+- 仅针对本地手动创建的技能
+- 对所有智能体/IDE 生效，不支持按智能体删除
+- 交互确认后删除根目录 `skills/<name>`（放入回收站）
+- 清理所有目标智能体/IDE 的符号链接
 
-读取配置 `skillLinkPrefixNpm` 和 `skillLinkPrefixPackage` 获取符号链接前缀，如果技能名称以这两个前缀之一开头，则删除操作改为“禁用”
+### 禁用
 
-读取配置 `installSources`，如果技能名称存在于某个来源列表中，则删除操作改为“禁用”
+- 写入 `skillDisabled`（可按智能体或全局）
+- 删除相应符号链接
 
-运行 guessAgent 方法猜测，如果配置文件或命令行参数规定了范围，且某个猜测出来的智能体/IDE 不在配置文件、命令行参数获取的值中，则删除操作改为“禁用”
+### 启用
 
-如果是“禁用”操作，则在配置 `skillDisabled` 中将该技能在对应智能体/IDE 中标记为已禁用
-
-如果是“删除”操作，则弹出交互式提示，用户同意后，删除根目录下 `skills/` 目录中的该技能文件夹（放入回收站），然后扫描所有目标智能体/IDE 的配置目录路径，删除对应的符号链接
-
-- 交互时提示改为三个选项：
-  - 禁用该技能（不删除根目录下的技能文件夹，只在配置文件中标记为已禁用，删除对应的符号链接）
-  - 删除该技能（删除根目录下的技能文件夹，并删除所有智能体/IDE 配置目录中的符号链接）
-  - 取消操作
+- 从 `skillDisabled` 中移除禁用记录
+- 恢复相应符号链接
 
 ## 列出 list
 
-调用核心扫描模块读取根目录下 `skills/` 目录中的所有技能文件夹，读取其 `SKILL.md` 文件，输出技能名称、描述、元信息等
+- 默认列出根目录 `skills/` 中的技能
+- 可区分手动技能与符号链接
+- `--show-disabled` 读取 `skillDisabled` 并标注禁用范围
+- 指定智能体/IDE 时列出该目录下技能
+  - 多个智能体合并显示并标注来源
+  - 同名但元信息不一致时标注冲突
 
-- 区分手动添加的技能与符号链接
-- 禁用的技能读不出来（因为符号链接都没有），如果用户使用 `--show-disabled` 参数，则需要调用配置模块读取配置 `skillDisabled`，列出被禁用的技能，再调用扫描模块找到所有能找到的技能，对于被禁用且还能找到的技能，读取其 `SKILL.md` 文件，输出技能名称、描述、元信息等（需要标注此技能已禁用）
+## 安装模块 install
 
-如果指定智能体/IDE，则扫描该智能体/IDE 的配置目录路径，列出该智能体/IDE 已安装的技能（包括手动添加的技能、符号链接）
+- 读取 `installSources`，若来源已存在则退出
+- 解析来源：`owner/repo`、`owner/repo/tree/branch`、`owner/repo/tree/branch/skills/name` 或 git URL
+- 克隆到临时目录（尽量浅克隆）
+- 扫描临时 `skills/` 获取技能列表
+  - 过滤不合法名称与非法前缀
+  - 指定技能时仅保留目标技能
+- 冲突交由用户选择，默认跳过（不覆盖真实目录原则）
+- 获取目标智能体/IDE 并同步禁用记录
+- 复制技能到根目录 `skills/`
+- 创建符号链接
+- 更新 `installSources`
+- 删除临时目录
 
-- 如果制定了多个智能体/IDE，则合并列出所有指定智能体/IDE 的技能，其中需要区分哪个是哪个（可能存在某个技能对 A、B 智能体/IDE 禁用，对 C 智能体/IDE 启用，默认只注明 C 智能体）
-  - 如果出现同名技能但是内容（名称、描述、元信息）不一致，则输出信息也要注明
-- 禁用的技能同上，但是需要注明是对哪个智能体/IDE 禁用（可能存在某个技能对 A、B 智能体/IDE 禁用，对 C 智能体/IDE 启用，此时需要著名其禁用情况）
+## 更新模块 update
 
-## 安装技能 install
+- 基于 `installSources` 解析来源并克隆
+- 扫描临时目录并生成新技能列表
+- 根据模式过滤技能：全量、按来源、按技能
+- 对比新旧列表：
+  - 同名覆盖更新
+  - 缺失技能仅在全量更新时执行卸载（并清理 `installSources`/`skillDisabled`），否则冲突交由用户选择，默认跳过
+  - 新增技能直接安装
+- 删除临时目录
 
-读取配置 `installSources` 配置项，如果技能来源已存在则报错退出
+## 日志与调试
 
-分析传入的技能来源，支持以下几种来源格式：
+冲突或解析失败时，追加写入项目根目录 `skills-manager-debug.log`：
 
-- 默认从 GitHub 安装 `<owner>/<repo>`
-- 从 GitHub 指定分支安装分支上的所有技能 `<owner>/<repo>/tree/<branch>`
-- 从 GitHub 指定分支安装指定技能 `<owner>/<repo>/tree/<branch>/skills/<skill-name>`
-- 指定 git URL 安装，只要该 URL 指向的仓库中包含 `skills/` 目录即可
+- 时间
+- 技能名
+- 冲突双方路径或错误详情
 
-前三种 GitHub 格式的来源，转换为对应的 git URL（其中指定技能的类型比较特殊，需要单独记录技能名）
+## CLI 指令约定
 
-使用临时目录克隆对应的 git 仓库
-
-调用核心扫描模块扫描临时目录下的 `skills/` 目录，获取技能列表
-
-- 读取配置 `skillLinkPrefixNpm` 和 `skillLinkPrefixPackage` 获取符号链接前缀，安装技能的名称前缀不得为这两个前缀之一
-- 如果是指定技能格式的来源，则只保留该技能，其他技能忽略
-
-比对扫描结果和根目录下 `skills/` 目录中的已有技能，再比对 `installSources` 配置项中已有的技能
-
-- 如果技能名称冲突，发起交互式提示，让用户选择覆盖、跳过、取消操作；默认选择跳过
-
-获取目标智能体/IDE （配置文件、命令行参数、guessAgent 方法猜测），没有获取到的话弹出交互式提示
-
-- 无论如何都应该运行 guessAgent 方法猜测，如果配置文件或命令行参数规定了范围，且某个猜测出来的智能体/IDE 不在配置文件、命令行参数获取的值中，则编辑配置 `skillDisabled` ，将可以安装的技能在该智能体/IDE 中标记为禁用
-
-在 `skills/` 目录下创建下载技能文件夹（从临时目录复制）
-
-创建符号链接到所有目标智能体/IDE 的配置目录路径中
-
-- 如果出现同名技能冲突，打印错误日志并跳过该 智能体/IDE
-
-删除临时目录
-
-### 根据源获取 git 路径模块
-
-根据传入的技能来源字符串，返回对应的 git URL 和分支名称（如果有指定分支的话），以及指定技能名称（如果有指定技能的话）
-
-### 克隆文件到临时目录模块
-
-根据 git URL 和分支名称，克隆对应的 git 仓库到临时目录，返回临时目录路径
-
-- 克隆参数需要注意分支、克隆深度等，操作尽可能小
-
-## 更新技能 update
-
-整体逻辑与安装技能模块基本一致，但是可以
-
-- 只更新指定的已安装的技能
-- 只更新指定来源安装的技能
-
-读取配置 `installSources` 配置项，获取已安装的技能来源列表
-
-如果是指定更新已安装的技能，则过滤出包含传入技能的来源列表
-
-- 如果某个技能不存在于任何来源列表中，则报错退出
-
-转换为对应的 git URL（其中指定技能的类型比较特殊，需要单独记录技能名）
-
-- 复用安装技能模块下的子模块
-
-使用临时目录克隆对应的 git 仓库
-
-- 复用安装技能模块下的子模块
-
-调用核心扫描模块扫描临时目录下的 `skills/` 目录，获取技能列表
-
-- 如果用户选择是的“更新指定的已安装的技能”的模式，则过滤出传入的技能列表
-
-对比新旧技能列表，可能发生的情况：
-
-- 技能名称一致，直接覆盖（更新）
-- 不再有某个技能，如果用户选择是的“更新指定的已安装的技能”的模式，则报错退出；如果是“更新指定来源安装的技能”的模式或全量更新，则删除该技能（删除根目录下 `skills/` 目录中的该技能文件夹，删除所有智能体/IDE 配置目录中的符号链接）
-- 新增了技能，直接安装该技能（安装根目录下 `skills/` 目录中的该技能文件夹，创建所有智能体/IDE 配置目录中的符号链接）
-
-删除临时目录
+- `scan` 扫描并同步链接
+- `add` 新建本地技能（别名：`create`）
+- `del` 删除本地技能（别名：`remove`）
+- `disable` 禁用技能（支持按智能体）
+- `enable` 启用技能（支持按智能体）
+- `ls` 列出技能（别名：`list`）
+- `config` 读取或修改配置（别名：`cfg`）
+- `install` 安装技能（别名：`i`、`pull`）
+- `update` 更新技能（别名：`up`）

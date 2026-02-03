@@ -113,6 +113,8 @@ root/
 
 使用 `skills-manager scan` 指令或直接使用 `skills-manager` 即可扫描项目中的所有智能体技能(Agent Skills)并创建符号链接
 
+若扫描到无效技能或同名冲突，将追加写入 `skills-manager-debug.log`
+
 ```bash
 # 默认参数调用
 skills-manager
@@ -158,27 +160,53 @@ skills-manager add my-new-skill --agent cursor,copilot
 
 ### 删除 `del`
 
-使用 `skills-manager del <skill-name>` 指令删除根目录下的 `skills/` 目录中的某个技能，并删除所有智能体/IDE 配置目录中的对应符号链接
+使用 `skills-manager del <skill-name>` 删除**本地手动创建**的技能，并删除所有智能体/IDE 配置目录中的对应符号链接
 
 指令别名 `skills-manager remove <skill-name>`
 
-如果删除的技能来自于某个依赖或子包，则不会删除该依赖或子包中的技能文件夹，而是在配置文件中将其标记为已删除，以避免下次扫描时重新创建符号链接
-
-如果技能由用户编写(即根目录下的 `skills/` 目录中存在该技能文件夹)，则会直接删除该技能文件夹(放入回收站)
-
-如果指定智能体/IDE，则只删除对应智能体/IDE 配置目录中的符号链接，且在配置文件中将其标记为已删除
+若技能来自 npm/子包/安装来源，请使用“禁用”指令
 
 ```bash
-# 删除 my-old-skill 技能
+# 删除本地技能
 skills-manager del my-old-skill
-
-# 指定目标智能体/IDE 为 windsurf 和 trae
-skills-manager del my-old-skill --agent windsurf,trae
 ```
 
 | 参数 | 说明 |
 | ---- | ---- |
 | `--no-prompt` | 禁用交互式提示，直接删除 |
+
+### 禁用 `disable`
+
+使用 `skills-manager disable <skill-name>` 禁用技能，并删除对应智能体/IDE 配置目录中的符号链接
+
+```bash
+# 禁用 my-old-skill 技能
+skills-manager disable my-old-skill
+
+# 仅对 windsurf 和 trae 禁用
+skills-manager disable my-old-skill --agent windsurf,trae
+```
+
+| 参数 | 说明 |
+| ---- | ---- |
+| `--no-prompt` | 禁用交互式提示，直接禁用 |
+| `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
+
+### 启用 `enable`
+
+使用 `skills-manager enable <skill-name>` 取消禁用并恢复符号链接
+
+```bash
+# 启用 my-old-skill 技能
+skills-manager enable my-old-skill
+
+# 仅对 windsurf 和 trae 启用
+skills-manager enable my-old-skill --agent windsurf,trae
+```
+
+| 参数 | 说明 |
+| ---- | ---- |
+| `--no-prompt` | 禁用交互式提示，直接启用 |
 | `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
 
 ### 列出 `ls`
@@ -297,7 +325,7 @@ skills-manager update --skills deep-clone-any-object
 | `skillLinkPrefixNpm` | `string` | `"npm-"` | 技能符号链接的前缀，例如设置为 `"np-"` 后，`some-skill` 技能的符号链接将命名为 `np-some-skill` |
 | `skillLinkPrefixPackage` | `string` | `"package-"` | 技能符号链接的前缀，例如设置为 `"pkg-"` 后，`some-skill` 技能的符号链接将命名为 `pkg-some-skill` |
 | `skillDisabled` | `Record<string, string[]>` | `{}` | 已删除的技能列表，键为技能名称，值为已删除该技能的智能体/IDE 列表，例如：`{ "some-skill": ["cursor", "copilot"] }` 表示 `some-skill` 技能在 `cursor` 和 `copilot` 智能体/IDE 中已被删除，如果值为空数组则表示该技能在所有智能体/IDE 中已被删除 |
-| `installSources` | `Record<string, string[]>` | `[]` | 已安装的技能来源列表，键为技能来源，值为从该来源安装的技能列表，工具会记录通过 `skills-manager install` 指令安装的技能来源 |
+| `installSources` | `Record<string, string[]>` | `{}` | 已安装的技能来源列表，键为技能来源，值为从该来源安装的技能列表，工具会记录通过 `skills-manager install` 指令安装的技能来源 |
 
 ## 支持的智能体/IDE
 
