@@ -31,7 +31,7 @@
 
 ## 配置模块 config
 
-负责读取和写入 `skills-manager-config.json`。
+负责读取和写入 `skilio-config.json`。
 
 - 返回值永远完整（缺省字段补默认值）
 - 写入为浅合并覆盖，`skillDisabled` 与 `installSources` 由业务模块提供完整值
@@ -165,7 +165,7 @@ metadata:
 
 ## 日志与调试
 
-冲突或解析失败时，追加写入项目根目录 `skills-manager-debug.log`：
+冲突或解析失败时，追加写入项目根目录 `skilio-debug.log`：
 
 - 时间
 - 技能名

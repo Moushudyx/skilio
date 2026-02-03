@@ -1,10 +1,10 @@
-# skills-manager
+# skilio
 
-![GitHub top lang](https://img.shields.io/github/languages/top/Moushudyx/skills-manager)
-[![GitHub license](https://img.shields.io/badge/license-Mulan_PSL_v2-blue)](https://github.com/moushudyx/skills-manager/blob/master/LICENSE)
-![NPM Version](https://img.shields.io/npm/v/skills-manager)
-![NPM Downloads](https://img.shields.io/npm/dm/skills-manager)
-![NPM Bundle Size](https://img.shields.io/bundlejs/size/skills-manager?label=gzipped)
+![GitHub top lang](https://img.shields.io/github/languages/top/Moushudyx/skilio)
+[![GitHub license](https://img.shields.io/badge/license-Mulan_PSL_v2-blue)](https://github.com/moushudyx/skilio/blob/master/LICENSE)
+![NPM Version](https://img.shields.io/npm/v/skilio)
+![NPM Downloads](https://img.shields.io/npm/dm/skilio)
+![NPM Bundle Size](https://img.shields.io/bundlejs/size/skilio?label=gzipped)
 
 A simple, efficient agent-skills manager for Node.js projects.
 
@@ -17,17 +17,17 @@ A simple, efficient agent-skills manager for Node.js projects.
 ## Install
 
 ```bash
-npm i -D skills-manager
+npm i -D skilio
 ```
 
 ## Quick start
 
 ```bash
 # Scan and link skills
-skills-manager
+skilio
 
 # Add a new local skill
-skills-manager add my-skill
+skilio add my-skill
 ```
 
 ## Docs

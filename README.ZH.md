@@ -1,17 +1,17 @@
-# skills-manager
+# skilio
 
-![GitHub top lang](https://img.shields.io/github/languages/top/Moushudyx/skills-manager)
-[![GitHub license](https://img.shields.io/badge/license-Mulan_PSL_v2-blue)](https://github.com/moushudyx/skills-manager/blob/master/LICENSE)
-![NPM Version](https://img.shields.io/npm/v/skills-manager)
-![NPM Downloads](https://img.shields.io/npm/dm/skills-manager)
-![NPM Bundle Size](https://img.shields.io/bundlejs/size/skills-manager?label=gzipped)
+![GitHub top lang](https://img.shields.io/github/languages/top/Moushudyx/skilio)
+[![GitHub license](https://img.shields.io/badge/license-Mulan_PSL_v2-blue)](https://github.com/moushudyx/skilio/blob/master/LICENSE)
+![NPM Version](https://img.shields.io/npm/v/skilio)
+![NPM Downloads](https://img.shields.io/npm/dm/skilio)
+![NPM Bundle Size](https://img.shields.io/bundlejs/size/skilio?label=gzipped)
 
 一个简单高效的智能体技能(Agent Skills)管理工具，基于 Node.js
 
 ## 使用方法
 
 ```bash
-npm i -D skills-manager
+npm i -D skilio
 ```
 
 在 `package.json` 中配置 `scripts`：
@@ -19,12 +19,12 @@ npm i -D skills-manager
 ```json
 {
   "scripts": {
-    "prepare": "skills-manager"
+    "prepare": "skilio"
   }
 }
 ```
 
-`skills-manager` 将会扫描项目子包(`packages/`)及其依赖(`node_modules/`)中的技能文件夹，创建符号链接到根目录下的 `skills/` 目录中，并根据本地环境信息推测使用的智能体/IDE，符号链接到对应的配置目录中(如 `.cursor/skills/`、`.github/skills/` 等)
+`skilio` 将会扫描项目子包(`packages/`)及其依赖(`node_modules/`)中的技能文件夹，创建符号链接到根目录下的 `skills/` 目录中，并根据本地环境信息推测使用的智能体/IDE，符号链接到对应的配置目录中(如 `.cursor/skills/`、`.github/skills/` 等)
 
 此外，建议将 `skills/npm-*`、`skills/package-*` 等符号链接添加到 `.gitignore` 中
 
@@ -35,13 +35,13 @@ npm i -D skills-manager
 如果未推测出用户正在使用的智能体/IDE，工具将弹出交互式提示让用户选择；如果不想看到这个提示，可以通过 `--no-prompt` 参数禁用交互式提示，此时工具只会打印一行警告信息
 
 ```bash
-skills-manager --no-prompt
+skilio --no-prompt
 ```
 
 如果你想指定目标智能体/IDE，可以通过 `--agent` 参数指定目标目录
 
 ```bash
-skills-manager --agent cursor,copilot,trae
+skilio --agent cursor,copilot,trae
 ```
 
 ## 示例
@@ -72,7 +72,7 @@ root/
 └── 其他文件...
 ```
 
-当你执行 `skills-manager` 后，工具将做这些事情：
+当你执行 `skilio` 后，工具将做这些事情：
 
 1. 扫描 `node_modules/*/skills/` 与 `node_modules/@*/*/skills/`，发现 `some-module/skills/some-skill/` 与 `@namespace/ns-module/skills/ns-skill/`
 2. 扫描 `packages/*/skills/`，发现 `sub-package/skills/pkg-skill/`
@@ -111,19 +111,19 @@ root/
 
 ### 扫描 `scan`
 
-使用 `skills-manager scan` 指令或直接使用 `skills-manager` 即可扫描项目中的所有智能体技能(Agent Skills)并创建符号链接
+使用 `skilio scan` 指令或直接使用 `skilio` 即可扫描项目中的所有智能体技能(Agent Skills)并创建符号链接
 
-若扫描到无效技能或同名冲突，将追加写入 `skills-manager-debug.log`
+若扫描到无效技能或同名冲突，将追加写入 `skilio-debug.log`
 
 ```bash
 # 默认参数调用
-skills-manager
+skilio
 
 # 使用 cursor 和 trae 作为目标智能体/IDE
-skills-manager scan --agent cursor,trae
+skilio scan --agent cursor,trae
 
 # 不扫描 node_modules 目录，不清理失效的符号链接
-skills-manager scan --no-npm --no-clean
+skilio scan --no-npm --no-clean
 ```
 
 | 参数 | 说明 |
@@ -139,18 +139,18 @@ skills-manager scan --no-npm --no-clean
 
 ### 新增 `add`
 
-使用 `skills-manager add <skill-name>` 指令新增一个技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
+使用 `skilio add <skill-name>` 指令新增一个技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
 
-指令别名 `skills-manager create <skill-name>`
+指令别名 `skilio create <skill-name>`
 
 **注意：技能名称不能以`npm-`或`package-`开头，以避免混淆**
 
 ```bash
 # 创建 my-new-skill 技能
-skills-manager add my-new-skill
+skilio add my-new-skill
 
 # 指定目标智能体/IDE 为 cursor 和 copilot
-skills-manager add my-new-skill --agent cursor,copilot
+skilio add my-new-skill --agent cursor,copilot
 ```
 
 | 参数 | 说明 |
@@ -160,15 +160,15 @@ skills-manager add my-new-skill --agent cursor,copilot
 
 ### 删除 `del`
 
-使用 `skills-manager del <skill-name>` 删除**本地手动创建**的技能，并删除所有智能体/IDE 配置目录中的对应符号链接
+使用 `skilio del <skill-name>` 删除**本地手动创建**的技能，并删除所有智能体/IDE 配置目录中的对应符号链接
 
-指令别名 `skills-manager remove <skill-name>`
+指令别名 `skilio remove <skill-name>`
 
 若技能来自 npm/子包/安装来源，请使用“禁用”指令
 
 ```bash
 # 删除本地技能
-skills-manager del my-old-skill
+skilio del my-old-skill
 ```
 
 | 参数 | 说明 |
@@ -177,14 +177,14 @@ skills-manager del my-old-skill
 
 ### 禁用 `disable`
 
-使用 `skills-manager disable <skill-name>` 禁用技能，并删除对应智能体/IDE 配置目录中的符号链接
+使用 `skilio disable <skill-name>` 禁用技能，并删除对应智能体/IDE 配置目录中的符号链接
 
 ```bash
 # 禁用 my-old-skill 技能
-skills-manager disable my-old-skill
+skilio disable my-old-skill
 
 # 仅对 windsurf 和 trae 禁用
-skills-manager disable my-old-skill --agent windsurf,trae
+skilio disable my-old-skill --agent windsurf,trae
 ```
 
 | 参数 | 说明 |
@@ -194,14 +194,14 @@ skills-manager disable my-old-skill --agent windsurf,trae
 
 ### 启用 `enable`
 
-使用 `skills-manager enable <skill-name>` 取消禁用并恢复符号链接
+使用 `skilio enable <skill-name>` 取消禁用并恢复符号链接
 
 ```bash
 # 启用 my-old-skill 技能
-skills-manager enable my-old-skill
+skilio enable my-old-skill
 
 # 仅对 windsurf 和 trae 启用
-skills-manager enable my-old-skill --agent windsurf,trae
+skilio enable my-old-skill --agent windsurf,trae
 ```
 
 | 参数 | 说明 |
@@ -211,9 +211,9 @@ skills-manager enable my-old-skill --agent windsurf,trae
 
 ### 列出 `ls`
 
-使用 `skills-manager ls` 指令列出当前项目中所有已管理的智能体技能(Agent Skills)
+使用 `skilio ls` 指令列出当前项目中所有已管理的智能体技能(Agent Skills)
 
-指令别名 `skills-manager list`
+指令别名 `skilio list`
 
 默认列出所有中心化维护在 `skills/` 目录中、且正在使用(没有被禁用)的技能，也可以指定智能体/IDE 仅列出该智能体/IDE 的技能
 
@@ -221,10 +221,10 @@ skills-manager enable my-old-skill --agent windsurf,trae
 
 ```bash
 # 列出所有的技能(中心化维护在 skills/ 目录中的技能)
-skills-manager ls
+skilio ls
 
 # 列出某个智能体/IDE 的技能(仅这个智能体/IDE的技能)
-skills-manager ls --agent copilot
+skilio ls --agent copilot
 ```
 
 | 参数 | 说明 |
@@ -234,49 +234,49 @@ skills-manager ls --agent copilot
 
 ### 修改配置 `config`
 
-使用 `skills-manager config <key> [value]` 指令查看或修改工具的配置项，具体配置项见下方“配置”章节
+使用 `skilio config <key> [value]` 指令查看或修改工具的配置项，具体配置项见下方“配置”章节
 
-指令别名 `skills-manager cfg`
+指令别名 `skilio cfg`
 
 > 这个指令无法修改 `skillDisabled`、`installSources` 配置项，该配置项由工具自动维护
 
 ```bash
 # 查看所有配置项
-skills-manager config
+skilio config
 
 # 查看某个配置项
-skills-manager config showPrompt # 输出 true 或 false
+skilio config showPrompt # 输出 true 或 false
 
 # 修改某个配置项
-skills-manager config showPrompt false # 将 showPrompt 配置项修改为 false
-skills-manager config defaultAgents cursor,copilot # 将 defaultAgents 配置项修改为 ["cursor", "copilot"]
+skilio config showPrompt false # 将 showPrompt 配置项修改为 false
+skilio config defaultAgents cursor,copilot # 将 defaultAgents 配置项修改为 ["cursor", "copilot"]
 
 # 特殊配置项 skillLinkPrefixNpm 和 skillLinkPrefixPackage
 # 这两项修改时会检查并自动更新已有的符号链接名称
-skills-manager config skillLinkPrefixNpm np- # 将 skillLinkPrefixNpm 配置项修改为 "np-"
-skills-manager config skillLinkPrefixPackage pkg- # 将 skillLinkPrefixPackage 配置项修改为 "pkg-"
+skilio config skillLinkPrefixNpm np- # 将 skillLinkPrefixNpm 配置项修改为 "np-"
+skilio config skillLinkPrefixPackage pkg- # 将 skillLinkPrefixPackage 配置项修改为 "pkg-"
 ```
 
 ### 安装技能 `install`
 
-使用 `skills-manager install` 指令安装指定来源仓库的技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
+使用 `skilio install` 指令安装指定来源仓库的技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
 
-指令别名 `skills-manager i` 或者 `skills-manager pull`
+指令别名 `skilio i` 或者 `skilio pull`
 
 ```bash
 # 默认从 GitHub 安装，格式为 <owner>/<repo>
-skills-manager install moushudyx/foreslash # 从 GitHub 仓库 moushudyx/foreslash 安装技能
+skilio install moushudyx/foreslash # 从 GitHub 仓库 moushudyx/foreslash 安装技能
 
 # 可以指定安装某个分支的技能，格式为 <owner>/<repo>/tree/<branch>
-skills-manager install moushudyx/foreslash/tree/main
+skilio install moushudyx/foreslash/tree/main
 
 # 可以指定安装某个分支上的某个技能，格式为 <owner>/<repo>/tree/<branch>/skills/<skill-name>
-skills-manager install moushudyx/foreslash/tree/main/skills/deep-clone-any-object
+skilio install moushudyx/foreslash/tree/main/skills/deep-clone-any-object
 
 # 可以指定 git URL 安装，只要该 URL 指向的仓库中包含 skills/ 目录即可
-skills-manager install git@github.com:moushudyx/foreslash.git
-skills-manager install git@gitee.com:moushu/foreslash.git
-skills-manager install https://gitee.com/moushu/foreslash.git
+skilio install git@github.com:moushudyx/foreslash.git
+skilio install git@gitee.com:moushu/foreslash.git
+skilio install https://gitee.com/moushu/foreslash.git
 ```
 
 | 参数 | 说明 |
@@ -286,19 +286,19 @@ skills-manager install https://gitee.com/moushu/foreslash.git
 
 ### 更新技能 `update`
 
-使用 `skills-manager update` 指令更新已安装的技能到最新版本
+使用 `skilio update` 指令更新已安装的技能到最新版本
 
-指令别名 `skills-manager up`
+指令别名 `skilio up`
 
 ```bash
 # 更新所有已安装的技能
-skills-manager update
+skilio update
 
 # 更新指定来源安装的技能
-skills-manager update --source moushudyx/foreslash
+skilio update --source moushudyx/foreslash
 
 # 更新指定技能
-skills-manager update --skills deep-clone-any-object
+skilio update --skills deep-clone-any-object
 ```
 
 | 参数 | 说明 |
@@ -309,7 +309,7 @@ skills-manager update --skills deep-clone-any-object
 
 ## 配置
 
-可以在项目根目录下创建一个 `skills-manager-config.json` 文件以配置工具的行为，所有的配置项均为非必填
+可以在项目根目录下创建一个 `skilio-config.json` 文件以配置工具的行为，所有的配置项均为非必填
 
 部分配置项(如 `skillDisabled`)由工具自动维护，用户无需手动编辑
 
@@ -325,7 +325,7 @@ skills-manager update --skills deep-clone-any-object
 | `skillLinkPrefixNpm` | `string` | `"npm-"` | 技能符号链接的前缀，例如设置为 `"np-"` 后，`some-skill` 技能的符号链接将命名为 `np-some-skill` |
 | `skillLinkPrefixPackage` | `string` | `"package-"` | 技能符号链接的前缀，例如设置为 `"pkg-"` 后，`some-skill` 技能的符号链接将命名为 `pkg-some-skill` |
 | `skillDisabled` | `Record<string, string[]>` | `{}` | 已删除的技能列表，键为技能名称，值为已删除该技能的智能体/IDE 列表，例如：`{ "some-skill": ["cursor", "copilot"] }` 表示 `some-skill` 技能在 `cursor` 和 `copilot` 智能体/IDE 中已被删除，如果值为空数组则表示该技能在所有智能体/IDE 中已被删除 |
-| `installSources` | `Record<string, string[]>` | `{}` | 已安装的技能来源列表，键为技能来源，值为从该来源安装的技能列表，工具会记录通过 `skills-manager install` 指令安装的技能来源 |
+| `installSources` | `Record<string, string[]>` | `{}` | 已安装的技能来源列表，键为技能来源，值为从该来源安装的技能列表，工具会记录通过 `skilio install` 指令安装的技能来源 |
 
 ## 支持的智能体/IDE
 
