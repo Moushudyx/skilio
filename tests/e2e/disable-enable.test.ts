@@ -1,38 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
-import fs from 'fs/promises';
-import { execa } from 'execa';
-import { temporaryDirectory } from 'tempy';
-
-// Resolve CLI entry built by rolldown.
-const repoRoot = process.cwd();
-const cliPath = path.join(repoRoot, 'dist', 'cli.cjs');
-
-// Read directory entries; return empty list if missing.
-const readDirNames = async (dir: string) => {
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    return entries.map((entry) => entry.name);
-  } catch {
-    return [] as string[];
-  }
-};
+import { ensureAgentDirs, readDirNames, runCli, withTempWorkspace } from './helpers';
 
 // Global disable should affect all agents when no --agent is provided.
 describe('disable/enable e2e (global)', () => {
-  it('disable without --agent disables all', async () => {
-    const root = temporaryDirectory();
-    await fs.mkdir(path.join(root, '.cursor'), { recursive: true });
-    await fs.mkdir(path.join(root, '.trae'), { recursive: true });
+  it('disable without --agent disables all agents', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor', 'trae']);
 
-    await execa('node', [cliPath, 'add', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], { cwd: root });
+      // Seed a skill linked to both agents.
+      await runCli(['add', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], root);
 
-    // Disable globally.
-    await execa('node', [cliPath, 'disable', 'my-skill'], { cwd: root });
+      // Disable globally (no --agent).
+      await runCli(['disable', 'my-skill'], root);
 
-    const cursorSkills = await readDirNames(path.join(root, '.cursor', 'skills'));
-    const traeSkills = await readDirNames(path.join(root, '.trae', 'skills'));
-    expect(cursorSkills).not.toEqual(expect.arrayContaining(['my-skill']));
-    expect(traeSkills).not.toEqual(expect.arrayContaining(['my-skill']));
+      const cursorSkills = await readDirNames(path.join(root, '.cursor', 'skills'));
+      const traeSkills = await readDirNames(path.join(root, '.trae', 'skills'));
+      expect(cursorSkills).not.toEqual(expect.arrayContaining(['my-skill']));
+      expect(traeSkills).not.toEqual(expect.arrayContaining(['my-skill']));
+    });
   });
 });
