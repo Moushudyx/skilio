@@ -1,7 +1,7 @@
 {
   "name": "skilio",
-  "version": "1.0.0",
-  "description": "A lightweight agent skills manager",
+  "version": "0.0.0",
+  "description": "A simple, efficient agent-skills manager",
   "main": "dist/index.cjs",
   "bin": {
     "skilio": "dist/cli.cjs"
@@ -14,10 +14,22 @@
     "test:e2e": "pnpm build && vitest run tests/e2e"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Moushu",
+  "license": "Mulan PSL v2",
+  "bugs": {
+    "url": "https://github.com/Moushudyx/skilio/issues"
+  },
+  "homepage": "https://github.com/Moushudyx/skilio#readme",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Moushudyx/skilio.git"
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.ZH.md",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
   ],
   "dependencies": {
     "@inquirer/prompts": "^5.3.2",

@@ -6,7 +6,7 @@
 ![NPM Downloads](https://img.shields.io/npm/dm/skilio)
 ![NPM Bundle Size](https://img.shields.io/bundlejs/size/skilio?label=gzipped)
 
-一个简单高效的智能体技能(Agent Skills)管理工具，基于 Node.js
+一个简单高效的智能体技能(Agent Skills)管理工具
 
 ## 使用方法
 
@@ -257,7 +257,7 @@ skilio config skillLinkPrefixNpm np- # 将 skillLinkPrefixNpm 配置项修改为
 skilio config skillLinkPrefixPackage pkg- # 将 skillLinkPrefixPackage 配置项修改为 "pkg-"
 ```
 
-### 安装技能 `install`
+### 尚在开发中 安装技能 `install`
 
 使用 `skilio install` 指令安装指定来源仓库的技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
 
@@ -284,7 +284,7 @@ skilio install https://gitee.com/moushu/foreslash.git
 | `--no-prompt` | 禁用交互式提示，遇到冲突项自动避免覆盖 |
 | `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
 
-### 更新技能 `update`
+### 尚在开发中 更新技能 `update`
 
 使用 `skilio update` 指令更新已安装的技能到最新版本
 
