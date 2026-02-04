@@ -329,6 +329,12 @@ program
       return;
     }
 
+    // Prevent users from modifying tool-managed fields.
+    const forbidden = new Set(['skillDisabled', 'installSources']);
+    if (forbidden.has(key)) {
+      throw new Error(`${key} is managed by skilio and cannot be modified via this command.`);
+    }
+
     const parsedValue = parseConfigValue(value);
     await updateConfig(rootDir, { [key]: parsedValue } as any);
     success(`Config updated: ${key}`);
