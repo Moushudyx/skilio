@@ -11,6 +11,7 @@ import { listRootSkills, isLocalSkillDir } from './skills';
 import { syncAgentSkills } from './sync';
 import { info, subInfo, warn, success, error } from './utils/log';
 import { ensureDir, pathExists } from './utils/fs';
+import { isSymlinkLike } from './utils/symlink';
 import { appendDebugLog } from './debug';
 
 // Parse comma-separated agents list from CLI options.
@@ -63,6 +64,14 @@ const getDisabledSet = (config: SkilioConfig, agent: AgentId) => {
 
 // CLI entry.
 const program = new Command();
+
+// Parse config value from CLI string input.
+const parseConfigValue = (value: string) => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (value.includes(',')) return value.split(',').map((v) => v.trim());
+  return value;
+};
 
 program.name('skilio').description('A lightweight agent skills manager').version('1.0.0');
 
@@ -177,8 +186,7 @@ program
       if (agentDir && (await pathExists(agentDir))) {
         const linkPath = path.join(agentDir, name);
         if (await pathExists(linkPath)) {
-          const stat = await fs.lstat(linkPath).catch(() => null);
-          if (stat?.isSymbolicLink()) {
+          if (await isSymlinkLike(linkPath)) {
             await fs.unlink(linkPath).catch(() => null);
           }
         }
@@ -239,7 +247,12 @@ program
       for (const agent of cliAgents) {
         current.delete(agent);
       }
-      config.skillDisabled[name] = Array.from(current);
+      const next = Array.from(current);
+      if (next.length === 0) {
+        delete config.skillDisabled[name];
+      } else {
+        config.skillDisabled[name] = next;
+      }
     }
 
     await writeConfig(rootDir, config);
@@ -316,7 +329,7 @@ program
       return;
     }
 
-    const parsedValue = value.includes(',') ? value.split(',').map((v) => v.trim()) : value;
+    const parsedValue = parseConfigValue(value);
     await updateConfig(rootDir, { [key]: parsedValue } as any);
     success(`Config updated: ${key}`);
   });

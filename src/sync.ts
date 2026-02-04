@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { ensureDir, pathExists } from './utils/fs';
-import { checkSymlink, createSymlink, deleteSymlink } from './utils/symlink';
+import { checkSymlink, createSymlink, deleteSymlink, isSymlinkLike } from './utils/symlink';
 import { appendDebugLog } from './debug';
 import { AgentId, AGENT_MAP } from './constants/agents';
 
@@ -36,7 +36,7 @@ export const syncAgentSkills = async (
     for (const entry of currentEntries) {
       const target = path.join(agentDir, entry.name);
       if (!desired.has(entry.name)) {
-        if (entry.isSymbolicLink()) {
+        if (await isSymlinkLike(target)) {
           await deleteSymlink(target);
         } else if (entry.isDirectory()) {
           await appendDebugLog(rootDir, `Conflict in ${agentDir}: ${entry.name} is a real directory.`);
@@ -52,8 +52,7 @@ export const syncAgentSkills = async (
       const ok = await checkSymlink(linkPath);
       if (!ok) {
         try {
-          const stat = await fs.lstat(linkPath);
-          if (stat.isSymbolicLink()) {
+          if (await isSymlinkLike(linkPath)) {
             await deleteSymlink(linkPath);
             await createSymlink(source, linkPath);
           } else {
