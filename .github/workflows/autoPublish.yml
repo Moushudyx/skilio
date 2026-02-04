@@ -1,0 +1,112 @@
+# Publish skilio to NPM automatically
+
+name: 🧿 Automatic Publish to NPM
+
+# Thank you Fairy 🧿
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json" # Only trigger when package.json changes
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Do not allow multiple deployments simultaneously;
+# skip non-running, non-latest queue runs, and do not cancel running workflows
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: 📋️ Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Fetch previous commit for version comparison
+      - name: 📦 Setup Node # Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🔧 Setup pnpm # Setup pnpm
+        run: npm install -g pnpm
+
+      - name: 🔎 Detect version change # Check if version has changed
+        id: version_check
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          # Get previous commit version
+          git checkout HEAD^ package.json
+          PREV_VERSION=$(node -p "require('./package.json').version")
+          git checkout -f HEAD package.json # Restore file
+          echo "Current version: $CURRENT_VERSION"
+          echo "Previous version: $PREV_VERSION"
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+            echo "Version changed - automatic publish process"
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No version change detected - skipping publish"
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📦 Install dependencies
+        if: steps.version_check.outputs.version_changed == 'true'
+        run: pnpm i
+      - name: 🚀 Build & Publish Package
+        if: steps.version_check.outputs.version_changed == 'true'
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 📝 Generate release notes
+        if: steps.version_check.outputs.version_changed == 'true'
+        id: changelog
+        run: |
+          # Extract content under the first level 2 heading in CHANGELOG.md
+          awk '
+          /^## / && !found {
+            found=1;
+            next
+          }
+          found && /^#/ {
+            exit
+          }
+          found' CHANGELOG.md > release_notes.txt
+
+          # YYYY-MM-DD
+          DATE=$(date +'%Y-%m-%d')
+
+          # Output
+          echo "release_title=Version ${{ steps.version_check.outputs.version }} - $DATE" >> $GITHUB_OUTPUT
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$(cat release_notes.txt)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          # echo "release_notes=$(cat release_notes.txt)" >> $GITHUB_OUTPUT
+          echo "Version ${{ steps.version_check.outputs.version }} - $DATE"
+          echo "$(cat release_notes.txt)"
+      - name: 🚀 Create GitHub Release # Publish Release
+        if: steps.version_check.outputs.version_changed == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version_check.outputs.version }}
+          name: ${{ steps.changelog.outputs.release_title }}
+          body: ${{ steps.changelog.outputs.release_notes }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: ☂️ Upload coverage reports to Codecov
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}

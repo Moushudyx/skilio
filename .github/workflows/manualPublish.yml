@@ -1,0 +1,44 @@
+# Publish skilio to NPM manually
+
+name: 📦 Manual Publish to NPM
+
+on:
+  workflow_dispatch:
+    inputs:
+      parameters:
+        description: '🤔 no param'
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Do not allow multiple deployments simultaneously;
+# skip non-running, non-latest queue runs, and do not cancel running workflows
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 🔧 Setup pnpm # Setup pnpm
+        run: npm install -g pnpm
+      - name: 📦 Install dependencies
+        run: pnpm i
+      - name: 🚀 Build & Publish Package
+        run: npm publish
+        if: | # Only publish under Moushudyx/skilio to prevent accidental publishes from forks
+          startsWith(github.repository, 'Moushudyx')
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: ☂️ Upload coverage reports to Codecov
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
