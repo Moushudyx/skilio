@@ -1,12 +1,32 @@
 {
   "name": "skilio",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A lightweight agent skills manager",
+  "main": "dist/index.cjs",
+  "bin": {
+    "skilio": "dist/cli.cjs"
+  },
   "scripts": {
+    "build": "rolldown -c",
+    "dev": "rolldown -c -w",
     "test": "echo \"Error: no test specified\""
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@inquirer/prompts": "^5.3.2",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "gray-matter": "^4.0.3",
+    "trash": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "rolldown": "^0.15.0",
+    "typescript": "^5.7.3"
+  }
 }
