@@ -46,6 +46,27 @@ describe('scan e2e', () => {
     });
   });
 
+  it('respects config scanNpm=false and skips npm skills', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+
+      await writeSkill(path.join(root, 'node_modules', 'some-module', 'skills', 'some-skill'), 'some-skill');
+      await writeSkill(path.join(root, 'packages', 'subpkg', 'skills', 'pkg-skill'), 'pkg-skill');
+
+      await fs.writeFile(
+        path.join(root, 'skilio-config.json'),
+        JSON.stringify({ scanNpm: false, scanPackages: true, cleanLinks: true }, null, 2),
+        'utf-8'
+      );
+
+      await runCli(['scan'], root);
+
+      const rootSkills = await readDirNames(path.join(root, 'skills'));
+      expect(rootSkills).not.toEqual(expect.arrayContaining(['npm-some-module-some-skill']));
+      expect(rootSkills).toEqual(expect.arrayContaining(['package-subpkg-pkg-skill']));
+    });
+  });
+
   it('respects --agent and only creates requested agent dirs (single command)', async () => {
     await withTempWorkspace(async (root) => {
       // Pre-create some agents to verify that only target agent is used.
@@ -100,6 +121,35 @@ describe('scan e2e', () => {
       const logContent = await fs.readFile(debugLog, 'utf-8');
       expect(logContent).toContain('Invalid SKILL.md');
       expect(logContent).toContain('Skill name mismatch');
+    });
+  });
+
+  it('cleans stale npm links after rescan', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+
+      await writeSkill(path.join(root, 'node_modules', 'some-module', 'skills', 'skill-a'), 'skill-a');
+      await writeSkill(path.join(root, 'node_modules', 'some-module', 'skills', 'skill-b'), 'skill-b');
+
+      await runCli(['scan', '--agent', 'cursor'], root);
+
+      let rootSkills = await readDirNames(path.join(root, 'skills'));
+      expect(rootSkills).toEqual(
+        expect.arrayContaining(['npm-some-module-skill-a', 'npm-some-module-skill-b'])
+      );
+
+      await fs.rm(path.join(root, 'node_modules', 'some-module', 'skills', 'skill-b'), { recursive: true, force: true });
+      await writeSkill(path.join(root, 'node_modules', 'some-module', 'skills', 'skill-c'), 'skill-c');
+
+      await runCli(['scan', '--agent', 'cursor'], root);
+
+      rootSkills = await readDirNames(path.join(root, 'skills'));
+      expect(rootSkills).not.toEqual(expect.arrayContaining(['npm-some-module-skill-b']));
+      expect(rootSkills).toEqual(expect.arrayContaining(['npm-some-module-skill-c']));
+
+      const cursorSkills = await readDirNames(path.join(root, '.cursor', 'skills'));
+      expect(cursorSkills).not.toEqual(expect.arrayContaining(['npm-some-module-skill-b']));
+      expect(cursorSkills).toEqual(expect.arrayContaining(['npm-some-module-skill-c']));
     });
   });
 });

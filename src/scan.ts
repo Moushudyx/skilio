@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { SkilioConfig } from './config';
 import { appendDebugLog } from './debug';
 import { listAllDirsByDir, pathExists } from './utils/fs';
-import { createSymlink } from './utils/symlink';
+import { checkSymlink, createSymlink, isSymlinkLike } from './utils/symlink';
 import { scanSkillsFromBase, ScannedSkill, listRootSkills } from './skills';
 
 // Build link name for npm skills: npm-<pkg>-<skill>
@@ -138,6 +138,36 @@ export const scanProject = async (rootDir: string, config: SkilioConfig) => {
     }
 
     await createSymlink(entry.skill.dir, linkPath);
+  }
+
+  if (config.cleanLinks) {
+    const entries = await fs.readdir(rootSkillsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isSymbolicLink()) continue;
+      const name = entry.name;
+      const linkPath = path.join(rootSkillsDir, name);
+
+      const isNpmLink = name.startsWith(prefixNpm);
+      const isPackageLink = name.startsWith(prefixPackage);
+      const shouldCheckSource =
+        (isNpmLink && config.scanNpm) || (isPackageLink && config.scanPackages) || (!isNpmLink && !isPackageLink);
+
+      if (!shouldCheckSource) {
+        continue;
+      }
+
+      const isValid = await checkSymlink(linkPath);
+      if (!isValid) {
+        if (await isSymlinkLike(linkPath)) {
+          await fs.unlink(linkPath).catch(() => null);
+        }
+        continue;
+      }
+
+      if ((isNpmLink || isPackageLink) && !usedNames.has(name)) {
+        await fs.unlink(linkPath).catch(() => null);
+      }
+    }
   }
 
   const rootSkills = await listRootSkills(rootDir);
