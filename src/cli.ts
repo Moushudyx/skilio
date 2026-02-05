@@ -97,10 +97,14 @@ program
   .action(async (options) => {
     const rootDir = process.cwd();
     const config = await readConfig(rootDir);
-    // CLI flags override config for this run only.
-    config.scanNpm = options.npm;
-    config.scanPackages = options.packages;
-    config.cleanLinks = options.clean;
+    // CLI flags override config for this run only when explicitly provided.
+    const argv = process.argv;
+    const hasNpmFlag = argv.includes('--npm') || argv.includes('--no-npm');
+    const hasPackagesFlag = argv.includes('--packages') || argv.includes('--no-packages');
+    const hasCleanFlag = argv.includes('--clean') || argv.includes('--no-clean');
+    if (hasNpmFlag) config.scanNpm = options.npm;
+    if (hasPackagesFlag) config.scanPackages = options.packages;
+    if (hasCleanFlag) config.cleanLinks = options.clean;
 
     const cliAgents = parseAgents(options.agent);
     const agents = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
@@ -188,7 +192,11 @@ program
     }
 
     // Move to recycle bin instead of permanent deletion.
+    // try {
     await trash(path.join(rootDir, 'skills', name));
+    // } catch {
+    //   await fs.rm(path.join(rootDir, 'skills', name), { recursive: true, force: true });
+    // }
 
     // Remove symlink from agent config dirs only; never remove real directories.
     for (const agent of getAllAgentIds()) {

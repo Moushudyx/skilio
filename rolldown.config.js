@@ -5,6 +5,7 @@ export default defineConfig({
     cli: 'src/cli.ts',
     index: 'src/index.ts',
   },
+  external: ['trash'],
   output: {
     dir: 'dist',
     format: 'cjs',

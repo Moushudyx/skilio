@@ -25,4 +25,36 @@ describe('init e2e', () => {
       expect(config.skillDisabled['my-skill']).toEqual(expect.arrayContaining(['cursor']));
     });
   });
+
+  it('rejects invalid prefixes and duplicate names', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+
+      try {
+        await runCli(['init', 'npm-bad-skill', '--agent', 'cursor', '--no-prompt'], root);
+        throw new Error('Expected init to fail for npm- prefix');
+      } catch (err: any) {
+        const out = err.stderr || err.stdout || err.message || '';
+        expect(out).toContain('Skill name cannot start with npm- or package- prefix');
+      }
+
+      try {
+        await runCli(['init', 'package-bad-skill', '--agent', 'cursor', '--no-prompt'], root);
+        throw new Error('Expected init to fail for package- prefix');
+      } catch (err: any) {
+        const out = err.stderr || err.stdout || err.message || '';
+        expect(out).toContain('Skill name cannot start with npm- or package- prefix');
+      }
+
+      await runCli(['init', 'good-skill', '--agent', 'cursor', '--no-prompt'], root);
+
+      try {
+        await runCli(['init', 'good-skill', '--agent', 'cursor', '--no-prompt'], root);
+        throw new Error('Expected init to fail for duplicate name');
+      } catch (err: any) {
+        const out = err.stderr || err.stdout || err.message || '';
+        expect(out).toContain('Skill already exists');
+      }
+    });
+  });
 });

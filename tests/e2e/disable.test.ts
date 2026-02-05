@@ -17,4 +17,19 @@ describe('disable e2e', () => {
       expect(traeSkills).not.toEqual(expect.arrayContaining(['my-skill']));
     });
   });
+
+  it('disable with --agent only affects target agent', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor', 'trae']);
+
+      await runCli(['init', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], root);
+
+      await runCli(['disable', 'my-skill', '--agent', 'cursor'], root);
+
+      const cursorSkills = await readDirNames(path.join(root, '.cursor', 'skills'));
+      const traeSkills = await readDirNames(path.join(root, '.trae', 'skills'));
+      expect(cursorSkills).not.toEqual(expect.arrayContaining(['my-skill']));
+      expect(traeSkills).toEqual(expect.arrayContaining(['my-skill']));
+    });
+  });
 });
