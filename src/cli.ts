@@ -9,6 +9,9 @@ import { guessAgents } from './agents';
 import { scanProject } from './scan';
 import { listRootSkills, isLocalSkillDir } from './skills';
 import { syncAgentSkills } from './sync';
+import { installFromSource } from './install';
+import { updateInstalled } from './update';
+import { checkUpdates } from './check';
 import { info, subInfo, warn, success, error } from './utils/log';
 import { ensureDir, pathExists } from './utils/fs';
 import { isSymlinkLike } from './utils/symlink';
@@ -21,6 +24,14 @@ const parseAgents = (value?: string): AgentId[] => {
     .split(',')
     .map((v) => v.trim())
     .filter(Boolean) as AgentId[];
+};
+
+const parseList = (value?: string): string[] => {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
 };
 
 // Resolve target agents by priority: CLI > config.defaultAgents > guess > prompt (if allowed).
@@ -344,17 +355,100 @@ program
   .command('install')
   .alias('i')
   .alias('pull')
-  .description('Install skills from repository (not implemented yet)')
-  .action(async () => {
-    warn('Install is not implemented yet. Please use manual installation for now.');
+  .description('Install skills from repository')
+  .argument('<source>', 'Skill source (repo, repo/tree/branch, repo/tree/branch/skills/name, or git URL)')
+  .option('--no-prompt', 'Disable interactive prompts')
+  .option('--agent <agents>', 'Target agents, comma separated')
+  .action(async (source, options) => {
+    const rootDir = process.cwd();
+    const config = await readConfig(rootDir);
+    const cliAgents = parseAgents(options.agent);
+    const agents = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+
+    info(`Installing from ${source}...`);
+    const result = await installFromSource({
+      rootDir,
+      config,
+      sourceInput: source,
+      agents,
+    });
+
+    if (result.skipped.length) {
+      warn(`Skipped: ${result.skipped.join(', ')}`);
+    }
+    success(`Installed ${result.installed.length} skills.`);
   });
 
 program
   .command('update')
   .alias('up')
-  .description('Update installed skills (not implemented yet)')
-  .action(async () => {
-    warn('Update is not implemented yet.');
+  .description('Update installed skills')
+  .option('--no-prompt', 'Disable interactive prompts')
+  .option('--agent <agents>', 'Target agents, comma separated')
+  .option('--source <sources>', 'Filter by sources, comma separated')
+  .option('--skills <skills>', 'Filter by skill names, comma separated')
+  .action(async (options) => {
+    const rootDir = process.cwd();
+    const config = await readConfig(rootDir);
+    const cliAgents = parseAgents(options.agent);
+    const agents = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const sources = parseList(options.source);
+    const skills = parseList(options.skills);
+
+    info('Updating installed skills...');
+    const result = await updateInstalled({
+      rootDir,
+      config,
+      agents,
+      sources,
+      skills,
+    });
+
+    if (result.removed.length) subInfo(`Removed: ${result.removed.join(', ')}`);
+    if (result.added.length) subInfo(`Added: ${result.added.join(', ')}`);
+    if (result.updated.length) subInfo(`Updated: ${result.updated.join(', ')}`);
+    if (result.skipped.length) warn(`Skipped: ${result.skipped.join(', ')}`);
+
+    success('Update complete.');
+  });
+
+program
+  .command('check')
+  .description('Check for updates without modifying local files')
+  .option('--source <sources>', 'Filter by sources, comma separated')
+  .option('--skills <skills>', 'Filter by skill names, comma separated')
+  .action(async (options) => {
+    const rootDir = process.cwd();
+    const config = await readConfig(rootDir);
+    const sources = parseList(options.source);
+    const skills = parseList(options.skills);
+
+    info('Checking for updates...');
+    const reports = await checkUpdates({ rootDir, config, sources, skills });
+
+    if (!reports.length) {
+      warn('No install sources found to check.');
+      return;
+    }
+
+    for (const report of reports) {
+      info(`Source: ${report.display}`);
+      if (!report.skills.length) {
+        subInfo('No skills matched filters.');
+        continue;
+      }
+      for (const skill of report.skills) {
+        if (skill.status === 'update-available') {
+          subInfo(`${skill.name}: update available`);
+        } else if (skill.status === 'up-to-date') {
+          subInfo(`${skill.name}: up to date`);
+        } else if (skill.status === 'missing-local') {
+          warn(`${skill.name}: missing local files`);
+        } else if (skill.status === 'missing-remote') {
+          warn(`${skill.name}: missing in source`);
+        }
+      }
+    }
   });
 
 program

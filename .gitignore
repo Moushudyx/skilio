@@ -25,3 +25,7 @@ yarn-error.log*
 lerna-debug.log*
 .DS_Store
 .eslintcache
+
+# skills
+skills/npm-*
+skills/package-*

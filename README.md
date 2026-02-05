@@ -254,7 +254,27 @@ skilio config skillLinkPrefixNpm np- # rename npm link prefix to "np-"
 skilio config skillLinkPrefixPackage pkg- # rename package link prefix to "pkg-"
 ```
 
-### Install (work-in-progress) `install`
+### Check `check`
+
+Check whether installed skills have updates available, without modifying local files.
+
+```bash
+# check all installed sources
+skilio check
+
+# check a specific source
+skilio check --source moushudyx/foreslash
+
+# check specific skills
+skilio check --skills deep-clone-any-object
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `--source <sources>` | Specify sources (comma-separated) |
+| `--skills <skills>` | Specify skills (comma-separated) |
+
+### Install `install`
 
 Install a skill from a source repository into the root `skills/` directory and link it into inferred agent/IDE config directories.
 
@@ -273,14 +293,17 @@ skilio install moushudyx/foreslash/tree/main/skills/deep-clone-any-object
 # install from git URL (repo must contain a skills/ directory)
 skilio install git@github.com:moushudyx/foreslash.git
 skilio install https://gitee.com/moushu/foreslash.git
+
+# install from a local path
+skilio install ./source-repo
 ```
 
 | Option | Description |
 | ------ | ----------- |
-| `--no-prompt` | Disable interactive prompts; avoid overwriting on conflicts |
+| `--no-prompt` | Disable interactive prompts |
 | `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
 
-### Update (work-in-progress) `update`
+### Update `update`
 
 Update installed skills to their latest versions. Alias: `skilio up`.
 
@@ -297,7 +320,8 @@ skilio update --skills deep-clone-any-object
 
 | Option | Description |
 | ------ | ----------- |
-| `--no-prompt` | Disable prompts; auto-resolve conflicts and deletions |
+| `--no-prompt` | Disable prompts |
+| `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
 | `--source <sources>` | Specify sources (comma-separated) |
 | `--skills <skills>` | Specify skills (comma-separated) |
 
