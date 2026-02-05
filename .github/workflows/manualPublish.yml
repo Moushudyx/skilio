@@ -1,6 +1,6 @@
 # Publish skilio to NPM manually
 
-name: 📦 Manual Publish to NPM
+name: 🚲 Manual Publish to NPM
 
 on:
   workflow_dispatch:
@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: write
     environment: production
     steps:
       - uses: actions/checkout@v4
@@ -35,12 +36,56 @@ jobs:
         run: npm install -g pnpm
       - name: 📦 Install dependencies
         run: pnpm i
-      - name: 🚀 Build & Publish Package
-        run: npm publish --provenance
+      - name: 🏗 Build & Test
+        run: pnpm run test
+      - name: 🚀 Publish Package
+        run: npm publish --provenance --access public
         if: | # Only publish under Moushudyx/skilio to prevent accidental publishes from forks
           startsWith(github.repository, 'Moushudyx')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 🔎 Detect version # Get version from package.json
+        id: version_check
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+      - name: 📝 Generate release notes
+        id: changelog
+        run: |
+          # Extract content under the first level 2 heading in CHANGELOG.md
+          awk '
+          /^## / && !found {
+            found=1;
+            next
+          }
+          found && /^#/ {
+            exit
+          }
+          found' CHANGELOG.md > release_notes.txt
+
+          # YYYY-MM-DD
+          DATE=$(date +'%Y-%m-%d')
+
+          # Output
+          echo "release_title=Version ${{ steps.version_check.outputs.version }} - $DATE" >> $GITHUB_OUTPUT
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$(cat release_notes.txt)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          # echo "release_notes=$(cat release_notes.txt)" >> $GITHUB_OUTPUT
+          echo "Version ${{ steps.version_check.outputs.version }} - $DATE"
+          echo "$(cat release_notes.txt)"
+      - name: 🚀 Create GitHub Release # Publish Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version_check.outputs.version }}
+          name: ${{ steps.changelog.outputs.release_title }}
+          body: ${{ steps.changelog.outputs.release_notes }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # - name: ☂️ Upload coverage reports to Codecov
       #   uses: codecov/codecov-action@v5
       #   with:
