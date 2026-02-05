@@ -11,7 +11,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+  pull-requests: read
 
 # Do not allow multiple deployments simultaneously;
 # skip non-running, non-latest queue runs, and do not cancel running workflows
@@ -22,18 +22,21 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: 'https://registry.npmjs.org'
       - name: 🔧 Setup pnpm # Setup pnpm
         run: npm install -g pnpm
       - name: 📦 Install dependencies
         run: pnpm i
       - name: 🚀 Build & Publish Package
-        run: npm publish
+        run: npm publish --provenance
         if: | # Only publish under Moushudyx/skilio to prevent accidental publishes from forks
           startsWith(github.repository, 'Moushudyx')
         env:
