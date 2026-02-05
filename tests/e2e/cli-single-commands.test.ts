@@ -5,13 +5,13 @@ import { ensureAgentDirs, exists, readDirNames, runCli, withTempWorkspace } from
 
 // Single-command CLI E2E tests. These should validate one command at a time.
 describe('cli e2e - single commands', () => {
-  it('add creates skill in root and syncs only selected agent', async () => {
+  it('init creates skill in root and syncs only selected agent', async () => {
     await withTempWorkspace(async (root) => {
       // Prepare agent config directories so guess/selection can work predictably.
       await ensureAgentDirs(root, ['cursor', 'trae']);
 
-      // Add a local skill and sync only to Trae.
-      await runCli(['add', 'my-skill', '--agent', 'trae', '--no-prompt'], root);
+      // Init a local skill and sync only to Trae.
+      await runCli(['init', 'my-skill', '--agent', 'trae', '--no-prompt'], root);
 
       const rootSkills = await readDirNames(path.join(root, 'skills'));
       expect(rootSkills).toEqual(expect.arrayContaining(['my-skill']));

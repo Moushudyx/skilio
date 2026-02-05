@@ -106,9 +106,9 @@ program
   });
 
 program
-  .command('add')
+  .command('init')
   .alias('create')
-  .description('Add a new local skill')
+  .description('Initialize a new local skill')
   .argument('<skill-name>', 'Skill folder name')
   .option('--no-prompt', 'Disable interactive prompt')
   .option('--agent <agents>', 'Target agents, comma separated')

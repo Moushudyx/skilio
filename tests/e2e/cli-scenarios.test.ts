@@ -8,8 +8,8 @@ describe('cli e2e - scenarios', () => {
     await withTempWorkspace(async (root) => {
       await ensureAgentDirs(root, ['cursor', 'trae']);
 
-      // Step 1: add the skill for both agents to establish baseline links.
-      await runCli(['add', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], root);
+      // Step 1: init the skill for both agents to establish baseline links.
+      await runCli(['init', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], root);
 
       // Step 2: disable cursor only; link should be removed from cursor.
       await runCli(['disable', 'my-skill', '--agent', 'cursor'], root);
@@ -28,7 +28,7 @@ describe('cli e2e - scenarios', () => {
       await ensureAgentDirs(root, ['cursor']);
 
       // Step 1: create a skill so that ls has data to show.
-      await runCli(['add', 'my-skill', '--agent', 'cursor', '--no-prompt'], root);
+      await runCli(['init', 'my-skill', '--agent', 'cursor', '--no-prompt'], root);
 
       // Step 2: set showPrompt to false and verify the stored value.
       await runCli(['config', 'showPrompt', 'false'], root);

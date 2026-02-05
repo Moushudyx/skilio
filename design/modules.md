@@ -83,7 +83,7 @@
   - 若目标为真实目录则不覆盖，记录 debug 日志并退出
 - 扫描过程输出进度，避免无响应感知
 
-## 新增模块 add
+## 新增模块 init
 
 - 技能名不得以 `skillLinkPrefixNpm` 或 `skillLinkPrefixPackage` 开头
 - 技能名必须等于文件夹名且合法（不含路径分隔符等非法字符）
@@ -174,7 +174,7 @@ metadata:
 ## CLI 指令约定
 
 - `scan` 扫描并同步链接
-- `add` 新建本地技能（别名：`create`）
+- `init` 新建本地技能（别名：`create`）
 - `del` 删除本地技能（别名：`remove`）
 - `disable` 禁用技能（支持按智能体）
 - `enable` 启用技能（支持按智能体）

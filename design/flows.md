@@ -16,7 +16,7 @@
 7. 输出扫描进度与结果摘要。
 8. 遇到同名冲突或不可继续错误，记录 debug 日志并退出。
 
-## add
+## init
 
 1. 校验名称合法且不含前缀 `skillLinkPrefixNpm` / `skillLinkPrefixPackage`。
 2. 在 `skills/` 下创建目录与 `SKILL.md`。

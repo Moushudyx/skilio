@@ -137,9 +137,9 @@ skilio scan --no-npm --no-clean
 | `--packages` | Scan `packages/` |
 | `--clean` | Clean broken symlinks |
 
-### Add `add`
+### Init `init`
 
-Use `skilio add <skill-name>` to create a new skill in the root `skills/` directory and link it into all inferred agent/IDE config directories.
+Use `skilio init <skill-name>` to create a new skill in the root `skills/` directory and link it into all inferred agent/IDE config directories.
 
 Alias: `skilio create <skill-name>`
 
@@ -147,10 +147,10 @@ Note: skill names must not start with `npm-` or `package-` to avoid ambiguity.
 
 ```bash
 # create my-new-skill
-skilio add my-new-skill
+skilio init my-new-skill
 
 # specify agents cursor and copilot
-skilio add my-new-skill --agent cursor,copilot
+skilio init my-new-skill --agent cursor,copilot
 ```
 
 | Option | Description |

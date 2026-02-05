@@ -137,9 +137,9 @@ skilio scan --no-npm --no-clean
 | `--packages` | 扫描 `packages/` 目录 |
 | `--clean` | 清理失效的符号链接 |
 
-### 新增 `add`
+### 新增 `init`
 
-使用 `skilio add <skill-name>` 指令新增一个技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
+使用 `skilio init <skill-name>` 指令新增一个技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
 
 指令别名 `skilio create <skill-name>`
 
@@ -147,10 +147,10 @@ skilio scan --no-npm --no-clean
 
 ```bash
 # 创建 my-new-skill 技能
-skilio add my-new-skill
+skilio init my-new-skill
 
 # 指定目标智能体/IDE 为 cursor 和 copilot
-skilio add my-new-skill --agent cursor,copilot
+skilio init my-new-skill --agent cursor,copilot
 ```
 
 | 参数 | 说明 |

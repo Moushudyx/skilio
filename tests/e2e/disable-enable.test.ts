@@ -9,7 +9,7 @@ describe('disable/enable e2e (global)', () => {
       await ensureAgentDirs(root, ['cursor', 'trae']);
 
       // Seed a skill linked to both agents.
-      await runCli(['add', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], root);
+      await runCli(['init', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], root);
 
       // Disable globally (no --agent).
       await runCli(['disable', 'my-skill'], root);

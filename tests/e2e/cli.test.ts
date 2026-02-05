@@ -30,13 +30,13 @@ const exists = async (p: string) => {
 
 // E2E tests validate CLI behavior on a temporary workspace.
 describe('cli e2e', () => {
-  it('add creates skill and syncs to selected agent only', async () => {
+  it('init creates skill and syncs to selected agent only', async () => {
     const root = temporaryDirectory();
     await fs.mkdir(path.join(root, '.cursor'), { recursive: true });
     await fs.mkdir(path.join(root, '.trae'), { recursive: true });
 
     // Create a local skill and sync only to Trae.
-    await execa('node', [cliPath, 'add', 'my-skill', '--agent', 'trae', '--no-prompt'], { cwd: root });
+    await execa('node', [cliPath, 'init', 'my-skill', '--agent', 'trae', '--no-prompt'], { cwd: root });
 
     const rootSkills = await readDirNames(path.join(root, 'skills'));
     expect(rootSkills).toEqual(expect.arrayContaining(['my-skill']));
@@ -58,8 +58,8 @@ describe('cli e2e', () => {
     await fs.mkdir(path.join(root, '.cursor'), { recursive: true });
     await fs.mkdir(path.join(root, '.trae'), { recursive: true });
 
-    // Add skill for both agents.
-    await execa('node', [cliPath, 'add', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], { cwd: root });
+    // Init skill for both agents.
+    await execa('node', [cliPath, 'init', 'my-skill', '--agent', 'cursor,trae', '--no-prompt'], { cwd: root });
 
     // Disable cursor only.
     await execa('node', [cliPath, 'disable', 'my-skill', '--agent', 'cursor'], { cwd: root });
@@ -77,7 +77,7 @@ describe('cli e2e', () => {
     await fs.mkdir(path.join(root, '.cursor'), { recursive: true });
 
     // Prepare a local skill for list output.
-    await execa('node', [cliPath, 'add', 'my-skill', '--agent', 'cursor', '--no-prompt'], { cwd: root });
+    await execa('node', [cliPath, 'init', 'my-skill', '--agent', 'cursor', '--no-prompt'], { cwd: root });
 
     await execa('node', [cliPath, 'config', 'showPrompt', 'false'], { cwd: root });
     const { stdout: showPrompt } = await execa('node', [cliPath, 'config', 'showPrompt'], { cwd: root });
