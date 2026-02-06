@@ -125,8 +125,7 @@ export const scanProject = async (rootDir: string, config: SkilioConfig) => {
     // If link exists and is a real directory, keep it and log a conflict.
     if (await pathExists(linkPath)) {
       try {
-        const stat = await fs.lstat(linkPath);
-        if (!stat.isSymbolicLink()) {
+        if (!(await isSymlinkLike(linkPath))) {
           await appendDebugLog(rootDir, `Conflict: ${linkPath} exists and is not a symlink.`);
           continue;
         }
@@ -143,9 +142,12 @@ export const scanProject = async (rootDir: string, config: SkilioConfig) => {
   if (config.cleanLinks) {
     const entries = await fs.readdir(rootSkillsDir, { withFileTypes: true });
     for (const entry of entries) {
-      if (!entry.isSymbolicLink()) continue;
       const name = entry.name;
       const linkPath = path.join(rootSkillsDir, name);
+
+      if (!(await isSymlinkLike(linkPath))) {
+        continue;
+      }
 
       const isNpmLink = name.startsWith(prefixNpm);
       const isPackageLink = name.startsWith(prefixPackage);

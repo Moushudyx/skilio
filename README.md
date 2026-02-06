@@ -158,6 +158,77 @@ skilio init my-new-skill --agent cursor,copilot
 | `--no-prompt` | Disable interactive prompts |
 | `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
 
+### Install `install`
+
+Install a skill from a source repository into the root `skills/` directory and link it into inferred agent/IDE config directories.
+
+Alias: `skilio i` or `skilio pull`
+
+```bash
+# install from GitHub owner/repo
+skilio install moushudyx/foreslash
+
+# specify branch
+skilio install moushudyx/foreslash/tree/main
+
+# install a specific skill in a repo
+skilio install moushudyx/foreslash/tree/main/skills/deep-clone-any-object
+
+# install from git URL (repo must contain a skills/ directory)
+skilio install git@github.com:moushudyx/foreslash.git
+skilio install https://gitee.com/moushu/foreslash.git
+
+# install from a local path
+skilio install ./source-repo
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `--no-prompt` | Disable interactive prompts |
+| `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
+
+### Check `check`
+
+Check whether installed skills have updates available, without modifying local files.
+
+```bash
+# check all installed sources
+skilio check
+
+# check a specific source
+skilio check --source moushudyx/foreslash
+
+# check specific skills
+skilio check --skills deep-clone-any-object
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `--source <sources>` | Specify sources (comma-separated) |
+| `--skills <skills>` | Specify skills (comma-separated) |
+
+### Update `update`
+
+Update installed skills to their latest versions. Alias: `skilio up`.
+
+```bash
+# update all installed skills
+skilio update
+
+# update by source
+skilio update --source moushudyx/foreslash
+
+# update specific skills
+skilio update --skills deep-clone-any-object
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `--no-prompt` | Disable prompts |
+| `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
+| `--source <sources>` | Specify sources (comma-separated) |
+| `--skills <skills>` | Specify skills (comma-separated) |
+
 ### Delete `del`
 
 Use `skilio del <skill-name>` to remove a locally created skill and its corresponding links from agent/IDE config directories.
@@ -253,77 +324,6 @@ skilio config defaultAgents cursor,copilot
 skilio config skillLinkPrefixNpm np- # rename npm link prefix to "np-"
 skilio config skillLinkPrefixPackage pkg- # rename package link prefix to "pkg-"
 ```
-
-### Check `check`
-
-Check whether installed skills have updates available, without modifying local files.
-
-```bash
-# check all installed sources
-skilio check
-
-# check a specific source
-skilio check --source moushudyx/foreslash
-
-# check specific skills
-skilio check --skills deep-clone-any-object
-```
-
-| Option | Description |
-| ------ | ----------- |
-| `--source <sources>` | Specify sources (comma-separated) |
-| `--skills <skills>` | Specify skills (comma-separated) |
-
-### Install `install`
-
-Install a skill from a source repository into the root `skills/` directory and link it into inferred agent/IDE config directories.
-
-Alias: `skilio i` or `skilio pull`
-
-```bash
-# install from GitHub owner/repo
-skilio install moushudyx/foreslash
-
-# specify branch
-skilio install moushudyx/foreslash/tree/main
-
-# install a specific skill in a repo
-skilio install moushudyx/foreslash/tree/main/skills/deep-clone-any-object
-
-# install from git URL (repo must contain a skills/ directory)
-skilio install git@github.com:moushudyx/foreslash.git
-skilio install https://gitee.com/moushu/foreslash.git
-
-# install from a local path
-skilio install ./source-repo
-```
-
-| Option | Description |
-| ------ | ----------- |
-| `--no-prompt` | Disable interactive prompts |
-| `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
-
-### Update `update`
-
-Update installed skills to their latest versions. Alias: `skilio up`.
-
-```bash
-# update all installed skills
-skilio update
-
-# update by source
-skilio update --source moushudyx/foreslash
-
-# update specific skills
-skilio update --skills deep-clone-any-object
-```
-
-| Option | Description |
-| ------ | ----------- |
-| `--no-prompt` | Disable prompts |
-| `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
-| `--source <sources>` | Specify sources (comma-separated) |
-| `--skills <skills>` | Specify skills (comma-separated) |
 
 ## Configuration
 

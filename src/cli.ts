@@ -34,12 +34,26 @@ const parseList = (value?: string): string[] => {
     .filter(Boolean);
 };
 
+type AgentResolutionSource = 'cli' | 'default' | 'guess' | 'prompt';
+type AgentResolution = {
+  agents: AgentId[];
+  source: AgentResolutionSource;
+  knownAgents: AgentId[];
+};
+
+const isExplicitSelection = (source: AgentResolutionSource) => source === 'cli' || source === 'default' || source === 'prompt';
+
 // Resolve target agents by priority: CLI > config.defaultAgents > guess > prompt (if allowed).
-const resolveAgents = async (rootDir: string, config: SkilioConfig, cliAgents: AgentId[], noPrompt?: boolean) => {
-  if (cliAgents.length) return cliAgents;
-  if (config.defaultAgents.length) return config.defaultAgents;
-  const guessed = await guessAgents(rootDir);
-  if (guessed.length) return guessed;
+const resolveAgents = async (
+  rootDir: string,
+  config: SkilioConfig,
+  cliAgents: AgentId[],
+  noPrompt?: boolean
+): Promise<AgentResolution> => {
+  const knownAgents = await guessAgents(rootDir);
+  if (cliAgents.length) return { agents: cliAgents, source: 'cli', knownAgents };
+  if (config.defaultAgents.length) return { agents: config.defaultAgents, source: 'default', knownAgents };
+  if (knownAgents.length) return { agents: knownAgents, source: 'guess', knownAgents };
   if (noPrompt || !config.showPrompt) {
     throw new Error('No agent detected. Use --agent or set defaultAgents in config.');
   }
@@ -52,14 +66,22 @@ const resolveAgents = async (rootDir: string, config: SkilioConfig, cliAgents: A
     })),
   });
 
-  return selected as AgentId[];
+  return { agents: selected as AgentId[], source: 'prompt', knownAgents };
 };
 
-// For a newly created local skill, mark non-selected agents as disabled.
-const buildDisabledMap = (config: SkilioConfig, skillName: string, enabledAgents: AgentId[]) => {
-  const all = new Set(getAllAgentIds());
-  const disabled = Array.from(all).filter((agent) => !enabledAgents.includes(agent));
-  config.skillDisabled[skillName] = disabled;
+// For a newly created local skill, mark known-but-unselected agents as disabled.
+const buildDisabledMap = (
+  config: SkilioConfig,
+  skillName: string,
+  enabledAgents: AgentId[],
+  knownAgents: AgentId[],
+  applyDisabled: boolean
+) => {
+  if (!applyDisabled) return;
+  const disabled = knownAgents.filter((agent) => !enabledAgents.includes(agent));
+  if (disabled.length) {
+    config.skillDisabled[skillName] = disabled;
+  }
 };
 
 // Build disabled set for one agent; empty array means disabled for all agents.
@@ -107,7 +129,8 @@ program
     if (hasCleanFlag) config.cleanLinks = options.clean;
 
     const cliAgents = parseAgents(options.agent);
-    const agents = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const agents = resolution.agents;
 
     info('Scanning skills...');
     const { rootSkills } = await scanProject(rootDir, config);
@@ -131,7 +154,8 @@ program
     const rootDir = process.cwd();
     const config = await readConfig(rootDir);
     const cliAgents = parseAgents(options.agent);
-    const agents = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const agents = resolution.agents;
 
     // Avoid confusing local skill name with external link prefixes.
     if (name.startsWith(config.skillLinkPrefixNpm) || name.startsWith(config.skillLinkPrefixPackage)) {
@@ -149,7 +173,7 @@ program
     const content = `---\nname: ${name}\ndescription: ''\nmetadata:\n  author: ''\n---\n`;
     await fs.writeFile(skillFile, content, 'utf-8');
 
-    buildDisabledMap(config, name, agents);
+    buildDisabledMap(config, name, agents, resolution.knownAgents, isExplicitSelection(resolution.source));
     await writeConfig(rootDir, config);
 
     const rootSkills = await listRootSkills(rootDir);
@@ -371,7 +395,8 @@ program
     const rootDir = process.cwd();
     const config = await readConfig(rootDir);
     const cliAgents = parseAgents(options.agent);
-    const agents = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const agents = resolution.agents;
 
     info(`Installing from ${source}...`);
     const result = await installFromSource({
@@ -379,6 +404,8 @@ program
       config,
       sourceInput: source,
       agents,
+      knownAgents: resolution.knownAgents,
+      applyDisabled: isExplicitSelection(resolution.source),
     });
 
     if (result.skipped.length) {
@@ -399,7 +426,8 @@ program
     const rootDir = process.cwd();
     const config = await readConfig(rootDir);
     const cliAgents = parseAgents(options.agent);
-    const agents = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const agents = resolution.agents;
     const sources = parseList(options.source);
     const skills = parseList(options.skills);
 
@@ -408,6 +436,8 @@ program
       rootDir,
       config,
       agents,
+      knownAgents: resolution.knownAgents,
+      applyDisabled: isExplicitSelection(resolution.source),
       sources,
       skills,
     });

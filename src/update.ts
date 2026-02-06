@@ -4,7 +4,7 @@ import trash from 'trash';
 import { SkilioConfig, writeConfig } from './config';
 import { listRootSkills } from './skills';
 import { syncAgentSkills } from './sync';
-import { AgentId, getAllAgentIds } from './constants/agents';
+import { AgentId } from './constants/agents';
 import { appendDebugLog } from './debug';
 import { listSourceSkills, parseSourceInput, parseSourceKey, fetchSourceToTemp } from './source';
 import { ensureDir, pathExists } from './utils/fs';
@@ -20,13 +20,17 @@ const buildDisabledSet = (config: SkilioConfig, agent: AgentId) => {
   return disabled;
 };
 
-const applyDisabledForAgents = (config: SkilioConfig, name: string, enabledAgents: AgentId[]) => {
-  const all = new Set(getAllAgentIds());
-  const disabled = Array.from(all).filter((agent) => !enabledAgents.includes(agent));
+const applyDisabledForAgents = (
+  config: SkilioConfig,
+  name: string,
+  enabledAgents: AgentId[],
+  knownAgents: AgentId[],
+  applyDisabled: boolean
+) => {
+  if (!applyDisabled) return;
+  const disabled = knownAgents.filter((agent) => !enabledAgents.includes(agent));
   if (disabled.length) {
     config.skillDisabled[name] = disabled;
-  } else {
-    delete config.skillDisabled[name];
   }
 };
 
@@ -41,10 +45,12 @@ export const updateInstalled = async (options: {
   rootDir: string;
   config: SkilioConfig;
   agents: AgentId[];
+  knownAgents: AgentId[];
+  applyDisabled: boolean;
   sources?: string[];
   skills?: string[];
 }) => {
-  const { rootDir, config, agents, sources, skills } = options;
+  const { rootDir, config, agents, knownAgents, applyDisabled, sources, skills } = options;
   const skillFilter = skills?.length ? new Set(skills) : null;
   const isFullUpdate = !sources?.length && !skills?.length;
 
@@ -126,7 +132,7 @@ export const updateInstalled = async (options: {
           await fs.cp(sourceDir, targetDir, { recursive: true });
           installed.push(name);
           result.added.push(name);
-          applyDisabledForAgents(config, name, agents);
+          applyDisabledForAgents(config, name, agents, knownAgents, applyDisabled);
         }
       }
 

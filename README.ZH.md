@@ -158,6 +158,80 @@ skilio init my-new-skill --agent cursor,copilot
 | `--no-prompt` | 禁用交互式提示 |
 | `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
 
+### 安装技能 `install`
+
+使用 `skilio install` 指令安装指定来源仓库的技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
+
+指令别名 `skilio i` 或者 `skilio pull`
+
+```bash
+# 默认从 GitHub 安装，格式为 <owner>/<repo>
+skilio install moushudyx/foreslash # 从 GitHub 仓库 moushudyx/foreslash 安装技能
+
+# 可以指定安装某个分支的技能，格式为 <owner>/<repo>/tree/<branch>
+skilio install moushudyx/foreslash/tree/main
+
+# 可以指定安装某个分支上的某个技能，格式为 <owner>/<repo>/tree/<branch>/skills/<skill-name>
+skilio install moushudyx/foreslash/tree/main/skills/deep-clone-any-object
+
+# 可以指定 git URL 安装，只要该 URL 指向的仓库中包含 skills/ 目录即可
+skilio install git@github.com:moushudyx/foreslash.git
+skilio install git@gitee.com:moushu/foreslash.git
+skilio install https://gitee.com/moushu/foreslash.git
+
+# 从本地路径安装
+skilio install ./source-repo
+```
+
+| 参数 | 说明 |
+| ---- | ---- |
+| `--no-prompt` | 禁用交互式提示 |
+| `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
+
+### 检查更新 `check`
+
+使用 `skilio check` 指令检查已安装技能是否有更新可用，不会修改本地文件
+
+```bash
+# 检查所有已安装来源
+skilio check
+
+# 检查指定来源
+skilio check --source moushudyx/foreslash
+
+# 检查指定技能
+skilio check --skills deep-clone-any-object
+```
+
+| 参数 | 说明 |
+| ---- | ---- |
+| `--source <sources>` | 指定来源，多个来源用逗号分隔 |
+| `--skills <skills>` | 指定技能名称，多个技能用逗号分隔 |
+
+### 更新技能 `update`
+
+使用 `skilio update` 指令更新已安装的技能到最新版本
+
+指令别名 `skilio up`
+
+```bash
+# 更新所有已安装的技能
+skilio update
+
+# 更新指定来源安装的技能
+skilio update --source moushudyx/foreslash
+
+# 更新指定技能
+skilio update --skills deep-clone-any-object
+```
+
+| 参数 | 说明 |
+| ---- | ---- |
+| `--no-prompt` | 禁用交互式提示 |
+| `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
+| `--source <sources>` | 指定技能来源，多个来源使用逗号分隔 |
+| `--skills <skills>` | 指定技能名称，多个技能使用逗号分隔 |
+
 ### 删除 `del`
 
 使用 `skilio del <skill-name>` 删除**本地手动创建**的技能，并删除所有智能体/IDE 配置目录中的对应符号链接
@@ -256,80 +330,6 @@ skilio config defaultAgents cursor,copilot # 将 defaultAgents 配置项修改�
 skilio config skillLinkPrefixNpm np- # 将 skillLinkPrefixNpm 配置项修改为 "np-"
 skilio config skillLinkPrefixPackage pkg- # 将 skillLinkPrefixPackage 配置项修改为 "pkg-"
 ```
-
-### 检查更新 `check`
-
-使用 `skilio check` 指令检查已安装技能是否有更新可用，不会修改本地文件
-
-```bash
-# 检查所有已安装来源
-skilio check
-
-# 检查指定来源
-skilio check --source moushudyx/foreslash
-
-# 检查指定技能
-skilio check --skills deep-clone-any-object
-```
-
-| 参数 | 说明 |
-| ---- | ---- |
-| `--source <sources>` | 指定来源，多个来源用逗号分隔 |
-| `--skills <skills>` | 指定技能名称，多个技能用逗号分隔 |
-
-### 安装技能 `install`
-
-使用 `skilio install` 指令安装指定来源仓库的技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
-
-指令别名 `skilio i` 或者 `skilio pull`
-
-```bash
-# 默认从 GitHub 安装，格式为 <owner>/<repo>
-skilio install moushudyx/foreslash # 从 GitHub 仓库 moushudyx/foreslash 安装技能
-
-# 可以指定安装某个分支的技能，格式为 <owner>/<repo>/tree/<branch>
-skilio install moushudyx/foreslash/tree/main
-
-# 可以指定安装某个分支上的某个技能，格式为 <owner>/<repo>/tree/<branch>/skills/<skill-name>
-skilio install moushudyx/foreslash/tree/main/skills/deep-clone-any-object
-
-# 可以指定 git URL 安装，只要该 URL 指向的仓库中包含 skills/ 目录即可
-skilio install git@github.com:moushudyx/foreslash.git
-skilio install git@gitee.com:moushu/foreslash.git
-skilio install https://gitee.com/moushu/foreslash.git
-
-# 从本地路径安装
-skilio install ./source-repo
-```
-
-| 参数 | 说明 |
-| ---- | ---- |
-| `--no-prompt` | 禁用交互式提示 |
-| `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
-
-### 更新技能 `update`
-
-使用 `skilio update` 指令更新已安装的技能到最新版本
-
-指令别名 `skilio up`
-
-```bash
-# 更新所有已安装的技能
-skilio update
-
-# 更新指定来源安装的技能
-skilio update --source moushudyx/foreslash
-
-# 更新指定技能
-skilio update --skills deep-clone-any-object
-```
-
-| 参数 | 说明 |
-| ---- | ---- |
-| `--no-prompt` | 禁用交互式提示 |
-| `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
-| `--source <sources>` | 指定技能来源，多个来源使用逗号分隔 |
-| `--skills <skills>` | 指定技能名称，多个技能使用逗号分隔 |
 
 ## 配置
 

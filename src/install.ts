@@ -4,17 +4,21 @@ import { SkilioConfig, writeConfig } from './config';
 import { appendDebugLog } from './debug';
 import { listRootSkills } from './skills';
 import { syncAgentSkills } from './sync';
-import { AgentId, getAllAgentIds } from './constants/agents';
+import { AgentId } from './constants/agents';
 import { ensureDir, pathExists } from './utils/fs';
 import { listSourceSkills, parseSourceInput, fetchSourceToTemp } from './source';
 
-const applyDisabledForAgents = (config: SkilioConfig, name: string, enabledAgents: AgentId[]) => {
-  const all = new Set(getAllAgentIds());
-  const disabled = Array.from(all).filter((agent) => !enabledAgents.includes(agent));
+const applyDisabledForAgents = (
+  config: SkilioConfig,
+  name: string,
+  enabledAgents: AgentId[],
+  knownAgents: AgentId[],
+  applyDisabled: boolean
+) => {
+  if (!applyDisabled) return;
+  const disabled = knownAgents.filter((agent) => !enabledAgents.includes(agent));
   if (disabled.length) {
     config.skillDisabled[name] = disabled;
-  } else {
-    delete config.skillDisabled[name];
   }
 };
 
@@ -29,8 +33,10 @@ export const installFromSource = async (options: {
   config: SkilioConfig;
   sourceInput: string;
   agents: AgentId[];
+  knownAgents: AgentId[];
+  applyDisabled: boolean;
 }) => {
-  const { rootDir, config, sourceInput, agents } = options;
+  const { rootDir, config, sourceInput, agents, knownAgents, applyDisabled } = options;
   const source = await parseSourceInput(sourceInput, rootDir);
 
   if (config.installSources[source.key]) {
@@ -68,7 +74,7 @@ export const installFromSource = async (options: {
 
       await fs.cp(skill.dir, targetDir, { recursive: true });
       installed.push(skill.name);
-      applyDisabledForAgents(config, skill.name, agents);
+      applyDisabledForAgents(config, skill.name, agents, knownAgents, applyDisabled);
     }
 
     if (!installed.length) {

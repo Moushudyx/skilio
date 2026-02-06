@@ -152,4 +152,31 @@ describe('scan e2e', () => {
       expect(cursorSkills).toEqual(expect.arrayContaining(['npm-some-module-skill-c']));
     });
   });
+
+  it('skips skills missing SKILL.md and removes agent links', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+
+      await writeSkill(path.join(root, 'skills', 'my-local'), 'my-local');
+      await writeSkill(path.join(root, 'node_modules', 'some-module', 'skills', 'some-skill'), 'some-skill');
+      await writeSkill(path.join(root, 'packages', 'subpkg', 'skills', 'pkg-skill'), 'pkg-skill');
+
+      await runCli(['scan', '--agent', 'cursor'], root);
+
+      await fs.rm(path.join(root, 'skills', 'my-local', 'SKILL.md'), { force: true });
+      await fs.rm(path.join(root, 'node_modules', 'some-module', 'skills', 'some-skill', 'SKILL.md'), { force: true });
+      await fs.rm(path.join(root, 'packages', 'subpkg', 'skills', 'pkg-skill', 'SKILL.md'), { force: true });
+
+      await runCli(['scan', '--agent', 'cursor'], root);
+
+      const rootSkills = await readDirNames(path.join(root, 'skills'));
+      expect(rootSkills).not.toEqual(expect.arrayContaining(['npm-some-module-some-skill']));
+      expect(rootSkills).not.toEqual(expect.arrayContaining(['package-subpkg-pkg-skill']));
+
+      const cursorSkills = await readDirNames(path.join(root, '.cursor', 'skills'));
+      expect(cursorSkills).not.toEqual(
+        expect.arrayContaining(['my-local', 'npm-some-module-some-skill', 'package-subpkg-pkg-skill'])
+      );
+    });
+  });
 });

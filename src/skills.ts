@@ -1,8 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { isValidSkillName, readSkillByDir } from './utils/skill';
+import { checkSkillDir, isValidSkillName, readSkillByDir } from './utils/skill';
 import { listAllDirsByDir, pathExists } from './utils/fs';
 import { appendDebugLog } from './debug';
+import { checkSymlink, isSymlinkLike } from './utils/symlink';
 
 // Skill origin types for bookkeeping.
 export type SkillSource = 'local' | 'npm' | 'package';
@@ -58,9 +59,31 @@ export const listRootSkills = async (rootDir: string) => {
   const rootSkillsDir = path.join(rootDir, 'skills');
   if (!(await pathExists(rootSkillsDir))) return [] as string[];
   const entries = await fs.readdir(rootSkillsDir, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isDirectory() || entry.isSymbolicLink())
-    .map((entry) => entry.name);
+  const results: string[] = [];
+
+  for (const entry of entries) {
+    const entryPath = path.join(rootSkillsDir, entry.name);
+    const linkLike = await isSymlinkLike(entryPath);
+    if (linkLike) {
+      const ok = await checkSymlink(entryPath);
+      if (ok) {
+        results.push(entry.name);
+      } else {
+        await appendDebugLog(rootDir, `Invalid root skill link: ${entryPath}`);
+      }
+      continue;
+    }
+
+    if (!entry.isDirectory()) continue;
+    const ok = await checkSkillDir(entryPath);
+    if (ok) {
+      results.push(entry.name);
+    } else {
+      await appendDebugLog(rootDir, `Invalid root skill dir: ${entryPath}`);
+    }
+  }
+
+  return results;
 };
 
 // A local skill is a real directory (not a symlink).
