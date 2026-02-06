@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 0.0.1-snapshot.3 - 2026-02-06
+
+> Warning: This CLI tool is still work-in-progress
+
+Command `install` now disable skills only for known-but-unselected agents
+
+Command `scan` now do not consider empty skill folder as valid skill
+
 ## Version 0.0.1-snapshot.2 - 2026-02-06
 
 > Warning: This CLI tool is still work-in-progress
