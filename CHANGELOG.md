@@ -1,6 +1,6 @@
 # Change Log
 
-## Version 0.0.1-snapshot.5 - 2026-02-07
+## Version 0.0.1-snapshot.5 - 2026-02-08
 
 > Warning: This CLI tool is still work-in-progress
 
