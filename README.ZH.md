@@ -238,6 +238,24 @@ skilio update --skills deep-clone-any-object
 | `--source <sources>` | 指定技能来源，多个来源使用逗号分隔 |
 | `--skills <skills>` | 指定技能名称，多个技能使用逗号分隔 |
 
+### 卸载 `uninstall`
+
+卸载已安装的来源，或卸载该来源中的指定技能。
+
+```bash
+# 卸载整个来源
+skilio uninstall moushudyx/foreslash
+
+# 卸载指定技能（支持通配符）
+skilio uninstall moushudyx/foreslash --skills deep-*
+```
+
+| 参数 | 说明 |
+| ---- | ---- |
+| `--no-prompt` | 禁用交互式提示 |
+| `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
+| `--skills <skills>` | 仅卸载匹配的技能（逗号分隔，支持 `*`） |
+
 ### 删除 `delete`
 
 使用 `skilio delete <skill-name>` 删除**本地手动创建**的技能，并删除所有智能体/IDE 配置目录中的对应符号链接

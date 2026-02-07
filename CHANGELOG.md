@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 0.0.1-snapshot.5 - 2026-02-07
+
+> Warning: This CLI tool is still work-in-progress
+
+Add `uninstall` command to remove installed sources or selected skills, uninstalled selection will be tracked with `exclude` to avoid re-adding on update
+
 ## Version 0.0.1-snapshot.4 - 2026-02-07
 
 > Warning: This CLI tool is still work-in-progress

@@ -235,6 +235,24 @@ skilio update --skills deep-clone-any-object
 | `--source <sources>` | Specify sources (comma-separated) |
 | `--skills <skills>` | Specify skills (comma-separated) |
 
+### Uninstall `uninstall`
+
+Uninstall an installed source or specific skills from that source.
+
+```bash
+# uninstall an entire source
+skilio uninstall moushudyx/foreslash
+
+# uninstall specific skills (supports wildcard)
+skilio uninstall moushudyx/foreslash --skills deep-*
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `--no-prompt` | Disable interactive prompts |
+| `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
+| `--skills <skills>` | Only uninstall matching skills (comma-separated, supports `*`) |
+
 ### Delete `delete`
 
 Use `skilio delete <skill-name>` to remove a locally created skill and its corresponding links from agent/IDE config directories.

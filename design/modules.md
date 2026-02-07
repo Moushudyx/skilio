@@ -47,7 +47,7 @@
 | `skillLinkPrefixNpm` | `string` | `"npm-"` | npm 技能链接前缀 |
 | `skillLinkPrefixPackage` | `string` | `"package-"` | 子包技能链接前缀 |
 | `skillDisabled` | `Record<string, string[]>` | `{}` | 禁用列表，值为空数组表示对所有智能体禁用 |
-| `installSources` | `Record<string, string[]>` | `{}` | 来源 -> 技能名列表 |
+| `installSources` | `Record<string, { mode: "all" | "only"; include: string[]; exclude: string[]; installed: string[] }>` | `{}` | 来源 -> 安装记录（模式与已安装列表） |
 
 ## 智能体/IDE 模块 agents
 
@@ -163,6 +163,16 @@ metadata:
   - 新增技能直接安装
 - 删除临时目录
 
+## 卸载模块 uninstall
+
+- 解析来源并读取 `installSources`
+- 全量卸载：移除来源记录并删除已安装技能目录
+- 部分卸载：移除指定技能并更新 `installed`
+  - `mode=all` 时追加到 `exclude`
+  - `mode=only` 时追加到 `exclude`，移除等值 `include`
+- 清理对应 `skillDisabled`
+- 同步目标智能体/IDE 目录
+
 ## 日志与调试
 
 冲突或解析失败时，追加写入项目根目录 `skilio-debug.log`：
@@ -175,10 +185,11 @@ metadata:
 
 - `scan` 扫描并同步链接
 - `init` 新建本地技能（别名：`create`）
-- `del` 删除本地技能（别名：`remove`）
+- `delete` 删除本地技能（别名：`del`、`remove`）
 - `disable` 禁用技能（支持按智能体）
 - `enable` 启用技能（支持按智能体）
 - `ls` 列出技能（别名：`list`）
 - `config` 读取或修改配置（别名：`cfg`）
-- `install` 安装技能（别名：`i`、`pull`）
+- `install` 安装技能（别名：`add`、`i`、`pull`）
 - `update` 更新技能（别名：`up`）
+- `uninstall` 卸载技能来源或其中的技能

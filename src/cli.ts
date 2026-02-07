@@ -11,6 +11,7 @@ import { listRootSkills, isLocalSkillDir } from './skills';
 import { syncAgentSkills } from './sync';
 import { installFromSource } from './install';
 import { updateInstalled } from './update';
+import { uninstallFromSource } from './uninstall';
 import { checkUpdates } from './check';
 import { info, subInfo, warn, success, error } from './utils/log';
 import { ensureDir, pathExists } from './utils/fs';
@@ -453,6 +454,42 @@ program
     if (result.skipped.length) warn(`Skipped: ${result.skipped.join(', ')}`);
 
     success('Update complete.');
+  });
+
+program
+  .command('uninstall')
+  .description('Uninstall skills from an installed source')
+  .argument('<source>', 'Installed source (same format as install)')
+  .option('--no-prompt', 'Disable interactive prompts')
+  .option('--agent <agents>', 'Target agents, comma separated')
+  .option('--skills <skills>', 'Only uninstall matching skills (comma separated, supports *)')
+  .action(async (source, options) => {
+    const rootDir = process.cwd();
+    const config = await readConfig(rootDir);
+    const cliAgents = parseAgents(options.agent);
+    const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const agents = resolution.agents;
+    const skills = parseList(options.skills);
+
+    info(`Uninstalling from ${source}...`);
+    const result = await uninstallFromSource({
+      rootDir,
+      config,
+      sourceInput: source,
+      agents,
+      skillPatterns: skills,
+    });
+
+    if (result.missing.length) {
+      warn(`No installed skills matched: ${result.missing.join(', ')}`);
+    }
+    if (result.skipped.length) {
+      warn(`Skipped: ${result.skipped.join(', ')}`);
+    }
+    if (result.removed.length) {
+      subInfo(`Removed: ${result.removed.join(', ')}`);
+    }
+    success(`Uninstall complete. Removed ${result.removed.length} skills.`);
   });
 
 program
