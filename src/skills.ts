@@ -4,6 +4,7 @@ import { checkSkillDir, isValidSkillName, readSkillByDir } from './utils/skill';
 import { listAllDirsByDir, pathExists } from './utils/fs';
 import { appendDebugLog } from './debug';
 import { checkSymlink, isSymlinkLike } from './utils/symlink';
+import { warn } from './utils/log';
 
 // Skill origin types for bookkeeping.
 export type SkillSource = 'local' | 'npm' | 'package';
@@ -39,6 +40,9 @@ export const scanSkillsFromBase = async (
     const parsed = await readSkillByDir(skillDir);
     if (!parsed.ok) {
       await appendDebugLog(rootDir, `Invalid SKILL.md: ${skillDir}. ${parsed.error}`);
+      if (!parsed.missing && parsed.error.trim()) {
+        warn(`Invalid SKILL.md: ${skillDir}. ${parsed.error}`);
+      }
       continue;
     }
     if (parsed.skill.name !== sub) {
@@ -46,6 +50,7 @@ export const scanSkillsFromBase = async (
         rootDir,
         `Skill name mismatch: ${skillDir}. folder=${sub}, name=${parsed.skill.name}`
       );
+      warn(`Skill name mismatch: ${skillDir}. folder=${sub}, name=${parsed.skill.name}`);
       continue;
     }
     results.push({ name: sub, dir: skillDir, source, sourceName });

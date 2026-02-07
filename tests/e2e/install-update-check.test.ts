@@ -65,4 +65,39 @@ describe('install/update/check e2e', () => {
       expect(cursorSkills).toEqual(expect.arrayContaining(['beta']));
     });
   });
+
+  it('respects install-only selection on update', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+
+      const source = path.join(root, 'source-repo');
+      await writeSkill(path.join(source, 'skills', 'alpha'), 'alpha', 'v1');
+      await writeSkill(path.join(source, 'skills', 'beta'), 'beta', 'v1');
+
+      await runCli(['install', source, '--skills', 'alpha', '--agent', 'cursor', '--no-prompt'], root);
+
+      await writeSkill(path.join(source, 'skills', 'gamma'), 'gamma', 'v1');
+      await runCli(['update', '--agent', 'cursor', '--no-prompt'], root);
+
+      const rootSkills = await readDirNames(path.join(root, 'skills'));
+      expect(rootSkills).toEqual(expect.arrayContaining(['alpha']));
+      expect(rootSkills).not.toEqual(expect.arrayContaining(['beta', 'gamma']));
+    });
+  });
+
+  it('installs root-level skill sources', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+
+      const source = path.join(root, 'source-repo');
+      await writeSkill(source, 'root-skill', 'v1');
+      await fs.writeFile(path.join(source, 'extra.txt'), 'ignore', 'utf-8');
+
+      await runCli(['install', source, '--agent', 'cursor', '--no-prompt'], root);
+
+      const skillDir = path.join(root, 'skills', 'root-skill');
+      expect(await exists(path.join(skillDir, 'SKILL.md'))).toBe(true);
+      expect(await exists(path.join(skillDir, 'extra.txt'))).toBe(false);
+    });
+  });
 });

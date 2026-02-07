@@ -1,7 +1,8 @@
 import path from 'path';
 import { SkilioConfig } from './config';
 import { listSourceSkills, parseSourceInput, parseSourceKey, fetchSourceToTemp } from './source';
-import { hashDir } from './utils/hash';
+import { hashDir, hashDirFiltered } from './utils/hash';
+import { ROOT_SKILL_DIRS } from './utils/skillCopy';
 import { pathExists } from './utils/fs';
 import { appendDebugLog } from './debug';
 
@@ -32,7 +33,8 @@ export const checkUpdates = async (options: {
   const reports: CheckSourceReport[] = [];
 
   for (const spec of sourceSpecs) {
-    if (!config.installSources[spec.key]) {
+    const record = config.installSources[spec.key];
+    if (!record) {
       await appendDebugLog(rootDir, `Source not installed: ${spec.key}`);
       continue;
     }
@@ -40,9 +42,9 @@ export const checkUpdates = async (options: {
     const { dir, cleanup } = await fetchSourceToTemp(spec, rootDir);
     try {
       const sourceSkills = await listSourceSkills(dir, spec, rootDir);
-      const sourceMap = new Map(sourceSkills.map((skill) => [skill.name, skill.dir]));
+      const sourceMap = new Map(sourceSkills.map((skill) => [skill.name, skill]));
 
-      const installed = config.installSources[spec.key] ?? [];
+      const installed = record.installed ?? [];
       const targets = installed.filter((name) => (skillFilter ? skillFilter.has(name) : true));
 
       const report: CheckSourceReport = {
@@ -57,13 +59,18 @@ export const checkUpdates = async (options: {
           report.skills.push({ name, status: 'missing-local' });
           continue;
         }
-        const remoteDir = sourceMap.get(name);
-        if (!remoteDir) {
+        const remoteSkill = sourceMap.get(name);
+        if (!remoteSkill) {
           report.skills.push({ name, status: 'missing-remote' });
           continue;
         }
 
-        const [localHash, remoteHash] = await Promise.all([hashDir(localDir), hashDir(remoteDir)]);
+        const useFilteredHash = remoteSkill.copyMode === 'root';
+        const allowed = ['SKILL.md', ...ROOT_SKILL_DIRS];
+        const [localHash, remoteHash] = await Promise.all([
+          useFilteredHash ? hashDirFiltered(localDir, allowed) : hashDir(localDir),
+          useFilteredHash ? hashDirFiltered(remoteSkill.dir, allowed) : hashDir(remoteSkill.dir),
+        ]);
         report.skills.push({
           name,
           status: localHash === remoteHash ? 'up-to-date' : 'update-available',

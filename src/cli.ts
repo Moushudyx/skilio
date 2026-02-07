@@ -186,7 +186,8 @@ program
   });
 
 program
-  .command('del')
+  .command('delete')
+  .alias('del')
   .alias('remove')
   .description('Delete a local skill')
   .argument('<skill-name>', 'Skill folder name')
@@ -204,7 +205,7 @@ program
       throw new Error('Only local skills can be deleted. Use disable for external skills.');
     }
 
-    const inInstallSources = Object.values(config.installSources).some((skills) => skills.includes(name));
+    const inInstallSources = Object.values(config.installSources).some((record) => record.installed.includes(name));
     if (inInstallSources) {
       throw new Error('Skill comes from install sources and cannot be deleted directly.');
     }
@@ -385,18 +386,21 @@ program
 
 program
   .command('install')
+  .alias('add')
   .alias('i')
   .alias('pull')
   .description('Install skills from repository')
   .argument('<source>', 'Skill source (repo, repo/tree/branch, repo/tree/branch/skills/name, or git URL)')
   .option('--no-prompt', 'Disable interactive prompts')
   .option('--agent <agents>', 'Target agents, comma separated')
+  .option('--skills <skills>', 'Only install matching skills (comma separated, supports *)')
   .action(async (source, options) => {
     const rootDir = process.cwd();
     const config = await readConfig(rootDir);
     const cliAgents = parseAgents(options.agent);
     const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
     const agents = resolution.agents;
+    const skills = parseList(options.skills);
 
     info(`Installing from ${source}...`);
     const result = await installFromSource({
@@ -406,6 +410,7 @@ program
       agents,
       knownAgents: resolution.knownAgents,
       applyDisabled: isExplicitSelection(resolution.source),
+      skillPatterns: skills,
     });
 
     if (result.skipped.length) {

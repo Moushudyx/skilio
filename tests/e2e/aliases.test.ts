@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import { ensureAgentDirs, exists, runCli, withTempWorkspace, writeSkill } from './helpers';
 
 describe('aliases e2e', () => {
-  it('supports create/remove/list/cfg aliases', async () => {
+  it('supports create/del/list/cfg aliases', async () => {
     await withTempWorkspace(async (root) => {
       await ensureAgentDirs(root, ['cursor']);
 
@@ -16,19 +16,19 @@ describe('aliases e2e', () => {
       const { stdout: showPrompt } = await runCli(['cfg', 'showPrompt'], root);
       expect(JSON.parse(showPrompt.trim())).toBe(false);
 
-      await runCli(['remove', 'alias-skill', '--no-prompt'], root);
+      await runCli(['del', 'alias-skill', '--no-prompt'], root);
       expect(await exists(path.join(root, 'skills', 'alias-skill'))).toBe(false);
     });
   });
 
-  it('supports install/update aliases with local source', async () => {
+  it('supports add/update aliases with local source', async () => {
     await withTempWorkspace(async (root) => {
       await ensureAgentDirs(root, ['cursor']);
 
       const source = path.join(root, 'source-repo');
       await writeSkill(path.join(source, 'skills', 'alpha'), 'alpha', 'v1');
 
-      await runCli(['i', source, '--agent', 'cursor', '--no-prompt'], root);
+      await runCli(['add', source, '--agent', 'cursor', '--no-prompt'], root);
       expect(await exists(path.join(root, 'skills', 'alpha'))).toBe(true);
 
       await writeSkill(path.join(source, 'skills', 'alpha'), 'alpha', 'v2');

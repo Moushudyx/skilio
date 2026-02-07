@@ -11,13 +11,15 @@ export type SkillMeta = {
   dir: string;
 };
 
-export type SkillReadResult = { ok: true; skill: SkillMeta } | { ok: false; error: string };
+export type SkillReadResult =
+  | { ok: true; skill: SkillMeta }
+  | { ok: false; error: string; missing?: boolean };
 
 // Read SKILL.md (case-insensitive) and validate required fields.
 export const readSkillByDir = async (dir: string): Promise<SkillReadResult> => {
   const file = await findFileIgnoreCase(dir, 'SKILL.md');
   if (!file) {
-    return { ok: false, error: 'SKILL.md not found' };
+    return { ok: false, error: 'SKILL.md not found', missing: true };
   }
 
   try {
@@ -58,3 +60,15 @@ export const isValidSkillName = (name: string) => {
   if (name.includes('/') || name.includes('\\')) return false;
   return true;
 };
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const matchesSkillPattern = (value: string, pattern: string) => {
+  if (!pattern) return false;
+  if (!pattern.includes('*')) return value === pattern;
+  const regex = new RegExp(`^${escapeRegex(pattern).replace(/\\\*/g, '.*')}$`);
+  return regex.test(value);
+};
+
+export const matchesAnySkillPattern = (value: string, patterns: string[]) =>
+  patterns.some((pattern) => matchesSkillPattern(value, pattern));

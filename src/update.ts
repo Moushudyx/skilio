@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import trash from 'trash';
-import { SkilioConfig, writeConfig } from './config';
+import { InstallSourceRecord, SkilioConfig, writeConfig } from './config';
 import { listRootSkills } from './skills';
 import { syncAgentSkills } from './sync';
 import { AgentId } from './constants/agents';
@@ -9,6 +9,8 @@ import { appendDebugLog } from './debug';
 import { listSourceSkills, parseSourceInput, parseSourceKey, fetchSourceToTemp } from './source';
 import { ensureDir, pathExists } from './utils/fs';
 import { isSymlinkLike } from './utils/symlink';
+import { matchesAnySkillPattern } from './utils/skill';
+import { copyRootSkill } from './utils/skillCopy';
 
 const buildDisabledSet = (config: SkilioConfig, agent: AgentId) => {
   const disabled = new Set<string>();
@@ -68,7 +70,8 @@ export const updateInstalled = async (options: {
   await ensureDir(path.join(rootDir, 'skills'));
 
   for (const spec of sourceSpecs) {
-    if (!config.installSources[spec.key]) {
+    const record = config.installSources[spec.key];
+    if (!record) {
       await appendDebugLog(rootDir, `Source not installed: ${spec.key}`);
       continue;
     }
@@ -76,15 +79,24 @@ export const updateInstalled = async (options: {
     const { dir, cleanup } = await fetchSourceToTemp(spec, rootDir);
     try {
       const sourceSkills = await listSourceSkills(dir, spec, rootDir);
-      const sourceMap = new Map(sourceSkills.map((skill) => [skill.name, skill.dir]));
+      const sourceMap = new Map(sourceSkills.map((skill) => [skill.name, skill]));
 
-      const installed = config.installSources[spec.key] ?? [];
+      const installed = record.installed ?? [];
+      const mode: InstallSourceRecord['mode'] = record.mode === 'only' ? 'only' : 'all';
+      const include = record.include ?? [];
+      const exclude = record.exclude ?? [];
+      const isAllowed = (name: string) => {
+        if (mode === 'only') {
+          return include.length ? matchesAnySkillPattern(name, include) : false;
+        }
+        return exclude.length ? !matchesAnySkillPattern(name, exclude) : true;
+      };
       const targets = installed.filter((name) => (skillFilter ? skillFilter.has(name) : true));
 
       for (const name of targets) {
         const targetDir = path.join(rootDir, 'skills', name);
-        const sourceDir = sourceMap.get(name);
-        if (!sourceDir) {
+        const sourceSkill = sourceMap.get(name);
+        if (!sourceSkill) {
           if (isFullUpdate) {
             if (await pathExists(targetDir)) {
               if (await isSymlinkLike(targetDir)) {
@@ -96,7 +108,7 @@ export const updateInstalled = async (options: {
               }
             }
             delete config.skillDisabled[name];
-            config.installSources[spec.key] = installed.filter((item) => item !== name);
+            record.installed = installed.filter((item) => item !== name);
           } else {
             await appendDebugLog(rootDir, `Missing remote skill: ${name} @ ${spec.key}`);
             result.skipped.push(name);
@@ -113,7 +125,11 @@ export const updateInstalled = async (options: {
           await fs.rm(targetDir, { recursive: true, force: true });
         }
 
-        await fs.cp(sourceDir, targetDir, { recursive: true });
+        if (sourceSkill.copyMode === 'root') {
+          await copyRootSkill(sourceSkill.dir, targetDir);
+        } else {
+          await fs.cp(sourceSkill.dir, targetDir, { recursive: true });
+        }
         if (!installed.includes(name)) {
           installed.push(name);
         }
@@ -121,23 +137,29 @@ export const updateInstalled = async (options: {
       }
 
       if (!skillFilter) {
-        for (const [name, sourceDir] of sourceMap) {
+        for (const [name, sourceSkill] of sourceMap) {
           if (installed.includes(name)) continue;
+          if (!isAllowed(name)) continue;
           const targetDir = path.join(rootDir, 'skills', name);
           if (await pathExists(targetDir)) {
             await appendDebugLog(rootDir, `Update conflict: ${targetDir} already exists.`);
             result.skipped.push(name);
             continue;
           }
-          await fs.cp(sourceDir, targetDir, { recursive: true });
+          if (sourceSkill.copyMode === 'root') {
+            await copyRootSkill(sourceSkill.dir, targetDir);
+          } else {
+            await fs.cp(sourceSkill.dir, targetDir, { recursive: true });
+          }
           installed.push(name);
           result.added.push(name);
           applyDisabledForAgents(config, name, agents, knownAgents, applyDisabled);
         }
       }
 
-      config.installSources[spec.key] = installed;
-      if (!config.installSources[spec.key].length) {
+      record.installed = installed;
+      config.installSources[spec.key] = record;
+      if (!record.installed.length) {
         delete config.installSources[spec.key];
       }
     } finally {

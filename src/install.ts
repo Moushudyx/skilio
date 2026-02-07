@@ -1,12 +1,14 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { SkilioConfig, writeConfig } from './config';
+import { InstallSourceRecord, SkilioConfig, writeConfig } from './config';
 import { appendDebugLog } from './debug';
 import { listRootSkills } from './skills';
 import { syncAgentSkills } from './sync';
 import { AgentId } from './constants/agents';
 import { ensureDir, pathExists } from './utils/fs';
 import { listSourceSkills, parseSourceInput, fetchSourceToTemp } from './source';
+import { matchesAnySkillPattern } from './utils/skill';
+import { copyRootSkill } from './utils/skillCopy';
 
 const applyDisabledForAgents = (
   config: SkilioConfig,
@@ -35,8 +37,9 @@ export const installFromSource = async (options: {
   agents: AgentId[];
   knownAgents: AgentId[];
   applyDisabled: boolean;
+  skillPatterns?: string[];
 }) => {
-  const { rootDir, config, sourceInput, agents, knownAgents, applyDisabled } = options;
+  const { rootDir, config, sourceInput, agents, knownAgents, applyDisabled, skillPatterns } = options;
   const source = await parseSourceInput(sourceInput, rootDir);
 
   if (config.installSources[source.key]) {
@@ -50,12 +53,18 @@ export const installFromSource = async (options: {
       throw new Error('No valid skills found in source.');
     }
 
+    const patterns = (skillPatterns ?? []).filter(Boolean);
+    const selected = patterns.length ? skills.filter((skill) => matchesAnySkillPattern(skill.name, patterns)) : skills;
+    if (!selected.length) {
+      throw new Error('No skills matched the provided patterns.');
+    }
+
     await ensureDir(path.join(rootDir, 'skills'));
 
     const installed: string[] = [];
     const skipped: string[] = [];
 
-    for (const skill of skills) {
+    for (const skill of selected) {
       if (
         skill.name.startsWith(config.skillLinkPrefixNpm) ||
         skill.name.startsWith(config.skillLinkPrefixPackage)
@@ -72,7 +81,11 @@ export const installFromSource = async (options: {
         continue;
       }
 
-      await fs.cp(skill.dir, targetDir, { recursive: true });
+      if (skill.copyMode === 'root') {
+        await copyRootSkill(skill.dir, targetDir);
+      } else {
+        await fs.cp(skill.dir, targetDir, { recursive: true });
+      }
       installed.push(skill.name);
       applyDisabledForAgents(config, skill.name, agents, knownAgents, applyDisabled);
     }
@@ -81,7 +94,14 @@ export const installFromSource = async (options: {
       throw new Error('No skills installed due to conflicts or invalid names.');
     }
 
-    config.installSources[source.key] = installed;
+    const selectionPatterns = patterns.length ? patterns : source.skillName ? [source.skillName] : [];
+    const record: InstallSourceRecord = {
+      mode: selectionPatterns.length ? 'only' : 'all',
+      include: selectionPatterns.length ? selectionPatterns : [],
+      exclude: [],
+      installed,
+    };
+    config.installSources[source.key] = record;
     await writeConfig(rootDir, config);
 
     const rootSkills = await listRootSkills(rootDir);

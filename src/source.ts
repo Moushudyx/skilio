@@ -4,6 +4,7 @@ import path from 'path';
 import { runCommand } from './utils/runCommand';
 import { appendDebugLog } from './debug';
 import { isValidSkillName, readSkillByDir } from './utils/skill';
+import { warn } from './utils/log';
 import { listAllDirsByDir, pathExists } from './utils/fs';
 
 export type SourceSpec = {
@@ -21,6 +22,7 @@ export type SourceSpec = {
 export type SourceSkill = {
   name: string;
   dir: string;
+  copyMode: 'full' | 'root';
 };
 
 const buildSourceKey = (kind: 'git' | 'local', location: string, branch?: string) => {
@@ -161,13 +163,17 @@ const scanSkillsDir = async (skillsDir: string, rootDir: string) => {
     const parsed = await readSkillByDir(skillDir);
     if (!parsed.ok) {
       await appendDebugLog(rootDir, `Invalid SKILL.md: ${skillDir}. ${parsed.error}`);
+      if (!parsed.missing && parsed.error.trim()) {
+        warn(`Invalid SKILL.md: ${skillDir}. ${parsed.error}`);
+      }
       continue;
     }
     if (parsed.skill.name !== sub) {
       await appendDebugLog(rootDir, `Skill name mismatch: ${skillDir}. folder=${sub}, name=${parsed.skill.name}`);
+      warn(`Skill name mismatch: ${skillDir}. folder=${sub}, name=${parsed.skill.name}`);
       continue;
     }
-    results.push({ name: sub, dir: skillDir });
+    results.push({ name: sub, dir: skillDir, copyMode: 'full' });
   }
 
   return results;
@@ -183,6 +189,9 @@ export const listSourceSkills = async (sourceDir: string, source: SourceSpec, ro
     const parsed = await readSkillByDir(skillDir);
     if (!parsed.ok) {
       await appendDebugLog(rootDir, `Invalid SKILL.md: ${skillDir}. ${parsed.error}`);
+      if (!parsed.missing && parsed.error.trim()) {
+        warn(`Invalid SKILL.md: ${skillDir}. ${parsed.error}`);
+      }
       return [] as SourceSkill[];
     }
     if (parsed.skill.name !== source.skillName) {
@@ -190,11 +199,30 @@ export const listSourceSkills = async (sourceDir: string, source: SourceSpec, ro
         rootDir,
         `Skill name mismatch: ${skillDir}. folder=${source.skillName}, name=${parsed.skill.name}`
       );
+      warn(`Skill name mismatch: ${skillDir}. folder=${source.skillName}, name=${parsed.skill.name}`);
       return [] as SourceSkill[];
     }
-    return [{ name: source.skillName, dir: skillDir }];
+    return [{ name: source.skillName, dir: skillDir, copyMode: 'full' }];
   }
 
   const skillsDir = path.join(sourceDir, source.subPath ?? 'skills');
-  return scanSkillsDir(skillsDir, rootDir);
+  const scanned = await scanSkillsDir(skillsDir, rootDir);
+  if (scanned.length) return scanned;
+
+  const rootParsed = await readSkillByDir(sourceDir);
+  if (rootParsed.ok) {
+    if (!isValidSkillName(rootParsed.skill.name)) {
+      await appendDebugLog(rootDir, `Invalid skill name: ${rootParsed.skill.name} @ ${sourceDir}`);
+      warn(`Invalid skill name: ${rootParsed.skill.name} @ ${sourceDir}`);
+      return [] as SourceSkill[];
+    }
+    return [{ name: rootParsed.skill.name, dir: sourceDir, copyMode: 'root' }];
+  }
+  if (!rootParsed.missing) {
+    await appendDebugLog(rootDir, `Invalid SKILL.md: ${sourceDir}. ${rootParsed.error}`);
+    if (rootParsed.error.trim()) {
+      warn(`Invalid SKILL.md: ${sourceDir}. ${rootParsed.error}`);
+    }
+  }
+  return [] as SourceSkill[];
 };
