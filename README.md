@@ -162,7 +162,7 @@ skilio init my-new-skill --agent cursor,copilot
 
 Install a skill from a source repository into the root `skills/` directory and link it into inferred agent/IDE config directories.
 
-Alias: `skilio i` or `skilio pull`
+Alias: `skilio add`, `skilio i`, or `skilio pull`
 
 ```bash
 # install from GitHub owner/repo
@@ -180,12 +180,18 @@ skilio install https://gitee.com/moushu/foreslash.git
 
 # install from a local path
 skilio install ./source-repo
+
+# only install selected skills (supports wildcard)
+skilio install moushudyx/foreslash --skills deep-*
 ```
+
+If the source repo contains a single root-level skill (a `SKILL.md` in the repo root), it will be installed as one skill folder. Only `SKILL.md`, `scripts/`, `references/`, and `assets/` are copied.
 
 | Option | Description |
 | ------ | ----------- |
 | `--no-prompt` | Disable interactive prompts |
 | `--agent <agents>` | Specify target agents/IDEs (comma-separated) |
+| `--skills <skills>` | Only install matching skills (comma-separated, supports `*`) |
 
 ### Check `check`
 
@@ -229,17 +235,17 @@ skilio update --skills deep-clone-any-object
 | `--source <sources>` | Specify sources (comma-separated) |
 | `--skills <skills>` | Specify skills (comma-separated) |
 
-### Delete `del`
+### Delete `delete`
 
-Use `skilio del <skill-name>` to remove a locally created skill and its corresponding links from agent/IDE config directories.
+Use `skilio delete <skill-name>` to remove a locally created skill and its corresponding links from agent/IDE config directories.
 
-Alias: `skilio remove <skill-name>`
+Alias: `skilio del <skill-name>` or `skilio remove <skill-name>`
 
 If the skill originates from npm or a package, use `disable` instead.
 
 ```bash
 # delete a local skill
-skilio del my-old-skill
+skilio delete my-old-skill
 ```
 
 | Option | Description |
@@ -341,7 +347,7 @@ Supported options:
 | `skillLinkPrefixNpm` | `string` | `"npm-"` | Prefix for npm-origin skill links (e.g. change to `np-` to produce `np-some-skill`) |
 | `skillLinkPrefixPackage` | `string` | `"package-"` | Prefix for package-origin skill links (e.g. change to `pkg-`) |
 | `skillDisabled` | `Record<string, string[]>` | `{}` | Disabled skills map: key = skill name, value = array of agents where it's disabled. Empty array means disabled for all agents. |
-| `installSources` | `Record<string, string[]>` | `{}` | Installed skill sources map: key = source, value = list of skills installed from that source. Managed by the tool. |
+| `installSources` | `Record<string, { mode: "all" \| "only"; include: string[]; exclude: string[]; installed: string[] }>` | `{}` | Installed sources map; `mode` controls full vs selected installs and `installed` tracks skills from each source. Managed by the tool. |
 
 ## Supported Agents/IDEs
 

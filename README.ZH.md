@@ -162,7 +162,7 @@ skilio init my-new-skill --agent cursor,copilot
 
 使用 `skilio install` 指令安装指定来源仓库的技能到根目录下的 `skills/` 目录中，并符号链接到所有推测出的智能体/IDE 配置目录中
 
-指令别名 `skilio i` 或者 `skilio pull`
+指令别名 `skilio add`、`skilio i` 或者 `skilio pull`
 
 ```bash
 # 默认从 GitHub 安装，格式为 <owner>/<repo>
@@ -181,12 +181,18 @@ skilio install https://gitee.com/moushu/foreslash.git
 
 # 从本地路径安装
 skilio install ./source-repo
+
+# 仅安装匹配的技能（支持通配符）
+skilio install moushudyx/foreslash --skills deep-*
 ```
+
+如果来源仓库只有根目录级别的技能（仓库根目录存在 `SKILL.md`），则会安装为单个技能目录，只复制 `SKILL.md`、`scripts/`、`references/`、`assets/`。
 
 | 参数 | 说明 |
 | ---- | ---- |
 | `--no-prompt` | 禁用交互式提示 |
 | `--agent <agents>` | 指定目标智能体/IDE，多个智能体/IDE 使用逗号分隔 |
+| `--skills <skills>` | 仅安装匹配的技能（逗号分隔，支持 `*`） |
 
 ### 检查更新 `check`
 
@@ -232,17 +238,17 @@ skilio update --skills deep-clone-any-object
 | `--source <sources>` | 指定技能来源，多个来源使用逗号分隔 |
 | `--skills <skills>` | 指定技能名称，多个技能使用逗号分隔 |
 
-### 删除 `del`
+### 删除 `delete`
 
-使用 `skilio del <skill-name>` 删除**本地手动创建**的技能，并删除所有智能体/IDE 配置目录中的对应符号链接
+使用 `skilio delete <skill-name>` 删除**本地手动创建**的技能，并删除所有智能体/IDE 配置目录中的对应符号链接
 
-指令别名 `skilio remove <skill-name>`
+指令别名 `skilio del <skill-name>` 或 `skilio remove <skill-name>`
 
 若技能来自 npm/子包/安装来源，请使用“禁用”指令
 
 ```bash
 # 删除本地技能
-skilio del my-old-skill
+skilio delete my-old-skill
 ```
 
 | 参数 | 说明 |
@@ -349,7 +355,7 @@ skilio config skillLinkPrefixPackage pkg- # 将 skillLinkPrefixPackage 配置项
 | `skillLinkPrefixNpm` | `string` | `"npm-"` | 技能符号链接的前缀，例如设置为 `"np-"` 后，`some-skill` 技能的符号链接将命名为 `np-some-skill` |
 | `skillLinkPrefixPackage` | `string` | `"package-"` | 技能符号链接的前缀，例如设置为 `"pkg-"` 后，`some-skill` 技能的符号链接将命名为 `pkg-some-skill` |
 | `skillDisabled` | `Record<string, string[]>` | `{}` | 已删除的技能列表，键为技能名称，值为已删除该技能的智能体/IDE 列表，例如：`{ "some-skill": ["cursor", "copilot"] }` 表示 `some-skill` 技能在 `cursor` 和 `copilot` 智能体/IDE 中已被删除，如果值为空数组则表示该技能在所有智能体/IDE 中已被删除 |
-| `installSources` | `Record<string, string[]>` | `{}` | 已安装的技能来源列表，键为技能来源，值为从该来源安装的技能列表，工具会记录通过 `skilio install` 指令安装的技能来源 |
+| `installSources` | `Record<string, { mode: "all" \| "only"; include: string[]; exclude: string[]; installed: string[] }>` | `{}` | 已安装来源列表，`mode` 用于控制全量或仅安装部分技能，`installed` 记录来源已安装技能，工具自动维护 |
 
 ## 支持的智能体/IDE
 

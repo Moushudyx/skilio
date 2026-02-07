@@ -1,5 +1,17 @@
 # Change Log
 
+## Version 0.0.1-snapshot.4 - 2026-02-07
+
+> Warning: This CLI tool is still work-in-progress
+
+Add install alias `add` and rename `del` to `delete` with alias `del`
+
+The `install` can select skills with patterns and preserves selection on update
+
+Support root-level skill sources
+
+Console warnings for invalid `SKILL.md` or name mismatches
+
 ## Version 0.0.1-snapshot.3 - 2026-02-06
 
 > Warning: This CLI tool is still work-in-progress
