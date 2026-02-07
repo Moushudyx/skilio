@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import path from 'path';
 import fs from 'fs/promises';
 import { checkbox, confirm } from '@inquirer/prompts';
-import trash from 'trash';
+import { moveToTrash } from './utils/trash';
 import { readConfig, updateConfig, writeConfig, SkilioConfig } from './config';
 import { AGENTS, AgentId, getAllAgentIds } from './constants/agents';
 import { guessAgents } from './agents';
@@ -219,7 +219,7 @@ program
 
     // Move to recycle bin instead of permanent deletion.
     // try {
-    await trash(path.join(rootDir, 'skills', name));
+    await moveToTrash(path.join(rootDir, 'skills', name));
     // } catch {
     //   await fs.rm(path.join(rootDir, 'skills', name), { recursive: true, force: true });
     // }

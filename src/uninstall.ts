@@ -1,5 +1,5 @@
 import path from 'path';
-import trash from 'trash';
+import { moveToTrash } from './utils/trash';
 import { SkilioConfig, writeConfig } from './config';
 import { listRootSkills } from './skills';
 import { syncAgentSkills } from './sync';
@@ -82,7 +82,7 @@ export const uninstallFromSource = async (options: {
         skipped.push(name);
         continue;
       }
-      await trash(targetDir);
+      await moveToTrash(targetDir);
     } else {
       await appendDebugLog(rootDir, `Uninstall missing local dir: ${targetDir}`);
     }

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import trash from 'trash';
+import { moveToTrash } from './utils/trash';
 import { InstallSourceRecord, SkilioConfig, writeConfig } from './config';
 import { listRootSkills } from './skills';
 import { syncAgentSkills } from './sync';
@@ -103,7 +103,7 @@ export const updateInstalled = async (options: {
                 await appendDebugLog(rootDir, `Skip removing symlink: ${targetDir}`);
                 result.skipped.push(name);
               } else {
-                await trash(targetDir);
+                await moveToTrash(targetDir);
                 result.removed.push(name);
               }
             }
