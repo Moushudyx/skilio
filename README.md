@@ -26,7 +26,7 @@ Add a `prepare` script in your `package.json`:
 
 `skilio` will scan for skill folders in your project's subpackages (`packages/`) and dependencies (`node_modules/`), create symbolic links into a centralized `skills/` directory at the repository root, and attempt to detect the agent/IDE used in the local environment. It will also create symbolic links from the centralized `skills/` to the corresponding agent configuration directories (for example `.cursor/skills/`, `.github/skills/`).
 
-We recommend adding links such as `skills/npm-*`, `skills/package-*` into `.gitignore`.
+We recommend adding links such as `**/skills/npm-*`, `**/skills/package-*` into `.gitignore`.
 
 > If you use multiple agents/IDEs, consider adding each agent's configuration directory (e.g. `.cursor/skills/`, `.github/skills/`) to `.gitignore` and maintain a single centralized `skills/` directory.
 

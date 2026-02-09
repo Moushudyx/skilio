@@ -1,6 +1,6 @@
 {
   "name": "skilio",
-  "version": "0.0.1-snapshot.5",
+  "version": "0.0.1-snapshot.6",
   "description": "A simple, efficient agent-skills manager",
   "main": "dist/index.cjs",
   "bin": {

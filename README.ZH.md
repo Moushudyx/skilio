@@ -26,7 +26,7 @@ npm i -D skilio
 
 `skilio` 将会扫描项目子包(`packages/`)及其依赖(`node_modules/`)中的技能文件夹，创建符号链接到根目录下的 `skills/` 目录中，并根据本地环境信息推测使用的智能体/IDE，符号链接到对应的配置目录中(如 `.cursor/skills/`、`.github/skills/` 等)
 
-此外，建议将 `skills/npm-*`、`skills/package-*` 等符号链接添加到 `.gitignore` 中
+此外，建议将 `**/skills/npm-*`、`**/skills/package-*` 等符号链接添加到 `.gitignore` 中
 
 > 如果开发者使用不同的智能体/IDE，建议将不同智能体/IDE 的配置目录(如 `.cursor/skills/`、`.github/skills/` 等)添加到 `.gitignore` 中，仅维护一份中心化的 `skills/` 目录
 

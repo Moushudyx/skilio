@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 0.0.1-snapshot.6 - 2026-02-09
+
+> Warning: This CLI tool is still work-in-progress
+
+Enhance agent detection
+
+Add tips for .gitignore configurations
+
 ## Version 0.0.1-snapshot.5 - 2026-02-08
 
 > Warning: This CLI tool is still work-in-progress
