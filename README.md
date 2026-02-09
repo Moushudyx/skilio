@@ -32,7 +32,7 @@ We recommend adding links such as `skills/npm-*`, `skills/package-*` into `.giti
 
 -----
 
-If the tool cannot infer the agent/IDE, it will show an interactive prompt for selection. To disable prompts, use `--no-prompt`; the tool will only print a warning in that mode.
+If the tool cannot infer the agent/IDE, it will show an interactive prompt for selection. To disable prompts, use `--no-prompt`; for `scan`, it will only print a warning and exit without syncing agent links when no agents are detected.
 
 ```bash
 skilio --no-prompt

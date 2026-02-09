@@ -35,7 +35,7 @@ const parseList = (value?: string): string[] => {
     .filter(Boolean);
 };
 
-type AgentResolutionSource = 'cli' | 'default' | 'guess' | 'prompt';
+type AgentResolutionSource = 'cli' | 'default' | 'guess' | 'prompt' | 'none';
 type AgentResolution = {
   agents: AgentId[];
   source: AgentResolutionSource;
@@ -49,13 +49,17 @@ const resolveAgents = async (
   rootDir: string,
   config: SkilioConfig,
   cliAgents: AgentId[],
-  noPrompt?: boolean
+  noPrompt?: boolean,
+  allowEmpty?: boolean
 ): Promise<AgentResolution> => {
   const knownAgents = await guessAgents(rootDir);
   if (cliAgents.length) return { agents: cliAgents, source: 'cli', knownAgents };
   if (config.defaultAgents.length) return { agents: config.defaultAgents, source: 'default', knownAgents };
   if (knownAgents.length) return { agents: knownAgents, source: 'guess', knownAgents };
   if (noPrompt || !config.showPrompt) {
+    if (allowEmpty) {
+      return { agents: [], source: 'none', knownAgents };
+    }
     throw new Error('No agent detected. Use --agent or set defaultAgents in config.');
   }
 
@@ -120,6 +124,18 @@ program
   .action(async (options) => {
     const rootDir = process.cwd();
     const config = await readConfig(rootDir);
+    const gitignorePath = path.join(rootDir, '.gitignore');
+    const gitignoreExists = await pathExists(gitignorePath);
+    if (!gitignoreExists) {
+      warn('Missing .gitignore. Add **/skills/npm-* and **/skills/package-* to avoid committing link artifacts.');
+    } else {
+      const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
+      const hasNpmPattern = gitignoreContent.includes('skills/npm-');
+      const hasPackagePattern = gitignoreContent.includes('skills/package-');
+      if (!hasNpmPattern || !hasPackagePattern) {
+        warn('Add **/skills/npm-* and **/skills/package-* to .gitignore to avoid committing link artifacts.');
+      }
+    }
     // CLI flags override config for this run only when explicitly provided.
     const argv = process.argv;
     const hasNpmFlag = argv.includes('--npm') || argv.includes('--no-npm');
@@ -130,11 +146,17 @@ program
     if (hasCleanFlag) config.cleanLinks = options.clean;
 
     const cliAgents = parseAgents(options.agent);
-    const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false);
+    const resolution = await resolveAgents(rootDir, config, cliAgents, options.prompt === false, true);
     const agents = resolution.agents;
 
     info('Scanning skills...');
     const { rootSkills } = await scanProject(rootDir, config);
+
+    if (!agents.length) {
+      warn('No agent detected. Skipping agent sync. Use --agent or set defaultAgents in config.');
+      success(`Scan complete. ${rootSkills.length} skills available.`);
+      return;
+    }
 
     for (const agent of agents) {
       const disabled = getDisabledSet(config, agent);

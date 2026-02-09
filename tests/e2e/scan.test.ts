@@ -46,6 +46,14 @@ describe('scan e2e', () => {
     });
   });
 
+  it('warns and exits when no agents and prompts are disabled', async () => {
+    await withTempWorkspace(async (root) => {
+      const result = await runCli(['scan', '--no-prompt'], root);
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain('No agent detected');
+    });
+  });
+
   it('respects config scanNpm=false and skips npm skills', async () => {
     await withTempWorkspace(async (root) => {
       await ensureAgentDirs(root, ['cursor']);
