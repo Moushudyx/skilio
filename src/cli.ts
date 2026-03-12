@@ -18,6 +18,7 @@ import { info, subInfo, warn, success, error } from './utils/log';
 import { ensureDir, pathExists } from './utils/fs';
 import { isSymlinkLike } from './utils/symlink';
 import { appendDebugLog } from './debug';
+import packageJson from '../package.json';
 
 // Parse comma-separated agents list from CLI options.
 const parseAgents = (value?: string): AgentId[] => {
@@ -112,7 +113,7 @@ const parseConfigValue = (value: string) => {
   return value;
 };
 
-program.name('skilio').description('A lightweight agent skills manager').version('1.0.0');
+program.name('skilio').description('A lightweight agent skills manager').version(packageJson.version);
 
 program
   .command('scan')
