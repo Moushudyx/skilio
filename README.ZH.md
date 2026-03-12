@@ -115,6 +115,13 @@ root/
 
 若扫描到无效技能或同名冲突，将追加写入 `skilio-debug.log`
 
+执行 `scan` 时，skilio 还会维护根目录下的 `AGENTS.md` 规则索引：
+
+- 若不存在 `AGENTS.md`，会自动创建
+- 若不存在 `<skilio></skilio>`，会在文件末尾追加引导文案与空标签
+- 每次 `scan` 都会整体替换 `<skilio>...</skilio>` 区块，写入最新的 `node_modules` 扫描索引
+- 对每个模块，如果其 `package.json` 同级存在 `skilio.md`，会将该文件内容追加到该模块小节下
+
 ```bash
 # 默认参数调用
 skilio
@@ -186,7 +193,7 @@ skilio install ./source-repo
 skilio install moushudyx/foreslash --skills deep-*
 ```
 
-如果来源仓库只有根目录级别的技能（仓库根目录存在 `SKILL.md`），则会安装为单个技能目录，只复制 `SKILL.md`、`scripts/`、`references/`、`assets/`。
+如果来源仓库只有根目录级别的技能（仓库根目录存在 `SKILL.md`），则会安装为单个技能目录，只复制 `SKILL.md`、`scripts/`、`references/`、`assets/`
 
 | 参数 | 说明 |
 | ---- | ---- |
@@ -240,7 +247,7 @@ skilio update --skills deep-clone-any-object
 
 ### 卸载 `uninstall`
 
-卸载已安装的来源，或卸载该来源中的指定技能。
+卸载已安装的来源，或卸载该来源中的指定技能
 
 ```bash
 # 卸载整个来源
@@ -375,23 +382,32 @@ skilio config skillLinkPrefixPackage pkg- # 将 skillLinkPrefixPackage 配置项
 | `skillDisabled` | `Record<string, string[]>` | `{}` | 已删除的技能列表，键为技能名称，值为已删除该技能的智能体/IDE 列表，例如：`{ "some-skill": ["cursor", "copilot"] }` 表示 `some-skill` 技能在 `cursor` 和 `copilot` 智能体/IDE 中已被删除，如果值为空数组则表示该技能在所有智能体/IDE 中已被删除 |
 | `installSources` | `Record<string, { mode: "all" \| "only"; include: string[]; exclude: string[]; installed: string[] }>` | `{}` | 已安装来源列表，`mode` 用于控制全量或仅安装部分技能，`installed` 记录来源已安装技能，工具自动维护 |
 
+## 项目规则文件映射
+
+skilio 维护了一套内置的“智能体/IDE -> 项目规则文件路径”映射：
+
+- `copilot` 使用 `.github/copilot-instructions.md` 作为已知规则文件路径
+- 其他智能体/IDE 在暂未确认公开规则文件路径时，统一回退到根目录 `AGENTS.md`
+
+当前 `scan` 仅会自动更新根目录 `AGENTS.md`
+
 ## 支持的智能体/IDE
 
-| 智能体/IDE | `--agent` | 配置目录 | 推测依据 |
-| ---------- | --------- | -------- | -------- |
-| Cursor     | `cursor`  | `.cursor/skills/` | `.cursor/` 目录 |
-| GitHub Copilot | `copilot` | `.github/skills/` | `.github/copilot-instructions.md` 文件或`.github/skills/` 目录 |
-| Windsurf   | `windsurf` | `.windsurf/skills/` | `.windsurf/` 目录 |
-| Trae       | `trae` | `.trae/skills/` | `.trae/` 目录 |
-| Claude Code | `claude` | `.claude/skills/` | `.claude/` 目录 |
-| OpenClaw   | `openclaw` | `skills/` | 无需推测 |
-| Qoder      | `qoder` | `.qoder/skills/` | `.qoder/` 目录 |
-| Qwen Code  | `qwen` | `.qwen/skills/` | `.qwen/` 目录 |
-| Cline      | `cline` | `.cline/skills/` | `.cline/` 目录 |
-| Codex      | `codex` | `.codex/skills/` | `.codex/` 目录 |
-| Continue   | `continue` | `.continue/skills/` | `.continue/` 目录 |
-| Gemini CLI | `gemini` | `.gemini/skills/` | `.gemini/` 目录 |
-| Kimi Code CLI | `kimi` | `.agents/skills/` | `.agents/` 目录 |
-| Roo Code   | `roo` | `.roo/skills/` | `.roo/` 目录 |
-| Zencoder   | `zencoder` | `.zencoder/skills/` | `.zencoder/` 目录 |
+| 智能体/IDE | `--agent` | 配置目录 | 项目规则文件 | 推测依据 |
+| ---------- | --------- | -------- | ------------ | -------- |
+| Cursor     | `cursor`  | `.cursor/skills/` | `AGENTS.md` | `.cursor/` 目录 |
+| GitHub Copilot | `copilot` | `.github/skills/` | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` 文件或`.github/skills/` 目录 |
+| Windsurf   | `windsurf` | `.windsurf/skills/` | `AGENTS.md` | `.windsurf/` 目录 |
+| Trae       | `trae` | `.trae/skills/` | `.trae/rules/repo.md` | `.trae/` 目录 |
+| Claude Code | `claude` | `.claude/skills/` | `CLAUDE.md` | `.claude/` 目录 |
+| OpenClaw   | `openclaw` | `skills/` | `AGENTS.md` | 无需推测 |
+| Qoder      | `qoder` | `.qoder/skills/` | `AGENTS.md` | `.qoder/` 目录 |
+| Qwen Code  | `qwen` | `.qwen/skills/` | `QWEN.md` | `.qwen/` 目录 |
+| Cline      | `cline` | `.cline/skills/` | `AGENTS.md` | `.cline/` 目录 |
+| Codex      | `codex` | `.codex/skills/` | `AGENTS.md` | `.codex/` 目录 |
+| Continue   | `continue` | `.continue/skills/` | `AGENTS.md` | `.continue/` 目录 |
+| Gemini CLI | `gemini` | `.gemini/skills/` | `GEMINI.md` | `.gemini/` 目录 |
+| Kimi Code CLI | `kimi` | `.agents/skills/` | `AGENTS.md` | `.agents/` 目录 |
+| Roo Code   | `roo` | `.roo/skills/` | `AGENTS.md` | `.roo/` 目录 |
+| Zencoder   | `zencoder` | `.zencoder/skills/` | `.zencoder/rules/repo.md` | `.zencoder/` 目录 |
 

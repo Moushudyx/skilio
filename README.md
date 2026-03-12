@@ -115,6 +115,13 @@ Run `skilio scan` or simply `skilio` to scan project agent skills and create sym
 
 If invalid skills or name conflicts are discovered, details will be appended to `skilio-debug.log`.
 
+During `scan`, skilio also maintains a project rules index in `AGENTS.md`:
+
+- If `AGENTS.md` does not exist, it will be created.
+- If `<skilio></skilio>` does not exist, skilio appends a guidance line and an empty tag block.
+- The whole `<skilio>...</skilio>` block is replaced with the latest index from `node_modules` scans.
+- For each module, if `skilio.md` exists next to that module's `package.json`, its content is appended under that module section.
+
 ```bash
 # default invocation
 skilio
@@ -367,22 +374,31 @@ Supported options:
 | `skillDisabled` | `Record<string, string[]>` | `{}` | Disabled skills map: key = skill name, value = array of agents where it's disabled. Empty array means disabled for all agents. |
 | `installSources` | `Record<string, { mode: "all" \| "only"; include: string[]; exclude: string[]; installed: string[] }>` | `{}` | Installed sources map; `mode` controls full vs selected installs and `installed` tracks skills from each source. Managed by the tool. |
 
+## Project Rules File Mapping
+
+skilio now maintains a built-in mapping from agent/IDE to a project rules file path.
+
+- `copilot` uses `.github/copilot-instructions.md` as its known rules file path.
+- Other agents currently fall back to root `AGENTS.md` when no stable public rules-file path is confirmed.
+
+Current `scan` implementation only updates root `AGENTS.md`.
+
 ## Supported Agents/IDEs
 
-| Agent/IDE | `--agent` | Config directory | Detection basis |
-| --------- | --------- | -------------- | --------------- |
-| Cursor | `cursor` | `.cursor/skills/` | presence of `.cursor/` |
-| GitHub Copilot | `copilot` | `.github/skills/` | presence of `.github/copilot-instructions.md` or `.github/skills/` |
-| Windsurf | `windsurf` | `.windsurf/skills/` | presence of `.windsurf/` |
-| Trae | `trae` | `.trae/skills/` | presence of `.trae/` |
-| Claude Code | `claude` | `.claude/skills/` | presence of `.claude/` |
-| OpenClaw | `openclaw` | `skills/` | no detection needed |
-| Qoder | `qoder` | `.qoder/skills/` | presence of `.qoder/` |
-| Qwen Code | `qwen` | `.qwen/skills/` | presence of `.qwen/` |
-| Cline | `cline` | `.cline/skills/` | presence of `.cline/` |
-| Codex | `codex` | `.codex/skills/` | presence of `.codex/` |
-| Continue | `continue` | `.continue/skills/` | presence of `.continue/` |
-| Gemini CLI | `gemini` | `.gemini/skills/` | presence of `.gemini/` |
-| Kimi Code CLI | `kimi` | `.agents/skills/` | presence of `.agents/` |
-| Roo Code | `roo` | `.roo/skills/` | presence of `.roo/` |
-| Zencoder | `zencoder` | `.zencoder/skills/` | presence of `.zencoder/` |
+| Agent/IDE | `--agent` | Config directory | Project rules file | Detection basis |
+| --------- | --------- | -------------- | ------------------ | --------------- |
+| Cursor | `cursor` | `.cursor/skills/` | `AGENTS.md` | presence of `.cursor/` |
+| GitHub Copilot | `copilot` | `.github/skills/` | `.github/copilot-instructions.md` | presence of `.github/copilot-instructions.md` or `.github/skills/` |
+| Windsurf | `windsurf` | `.windsurf/skills/` | `AGENTS.md` | presence of `.windsurf/` |
+| Trae | `trae` | `.trae/skills/` | `.trae/rules/repo.md` | presence of `.trae/` |
+| Claude Code | `claude` | `.claude/skills/` | `CLAUDE.md` | presence of `.claude/` |
+| OpenClaw | `openclaw` | `skills/` | `AGENTS.md` | no detection needed |
+| Qoder | `qoder` | `.qoder/skills/` | `AGENTS.md` | presence of `.qoder/` |
+| Qwen Code | `qwen` | `.qwen/skills/` | `QWEN.md` | presence of `.qwen/` |
+| Cline | `cline` | `.cline/skills/` | `AGENTS.md` | presence of `.cline/` |
+| Codex | `codex` | `.codex/skills/` | `AGENTS.md` | presence of `.codex/` |
+| Continue | `continue` | `.continue/skills/` | `AGENTS.md` | presence of `.continue/` |
+| Gemini CLI | `gemini` | `.gemini/skills/` | `GEMINI.md` | presence of `.gemini/` |
+| Kimi Code CLI | `kimi` | `.agents/skills/` | `AGENTS.md` | presence of `.agents/` |
+| Roo Code | `roo` | `.roo/skills/` | `AGENTS.md` | presence of `.roo/` |
+| Zencoder | `zencoder` | `.zencoder/skills/` | `.zencoder/rules/repo.md` | presence of `.zencoder/` |
