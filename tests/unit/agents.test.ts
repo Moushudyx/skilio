@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AGENT_MAP, getAllAgentIds } from '../../src/constants/agents';
+import { AGENT_MAP, getAgentRulesFilePath, getAllAgentIds } from '../../src/constants/agents';
 
 // Unit tests for agent metadata constants.
 describe('agents constants', () => {
@@ -15,5 +15,10 @@ describe('agents constants', () => {
     const trae = AGENT_MAP.get('trae');
     expect(cursor?.configDir).toBe('.cursor/skills');
     expect(trae?.configDir).toBe('.trae/skills');
+  });
+
+  it('exposes rules file mapping with copilot override', () => {
+    expect(getAgentRulesFilePath('cursor')).toBe('AGENTS.md');
+    expect(getAgentRulesFilePath('copilot')).toBe('.github/copilot-instructions.md');
   });
 });

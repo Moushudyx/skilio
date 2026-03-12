@@ -187,4 +187,48 @@ describe('scan e2e', () => {
       );
     });
   });
+
+  it('creates AGENTS.md and writes node_modules skill index', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+
+      await writeSkill(path.join(root, 'node_modules', 'some-module', 'skills', 'alpha-skill'), 'alpha-skill');
+
+      await runCli(['scan', '--agent', 'cursor'], root);
+
+      const agentsContent = await fs.readFile(path.join(root, 'AGENTS.md'), 'utf-8');
+      expect(agentsContent).toContain('Before writing code for any component mentioned in `<skilio>`');
+      expect(agentsContent).toContain('<skilio>');
+      expect(agentsContent).toContain('## some-module');
+      expect(agentsContent).toContain('`alpha-skill` filepath: `skills/npm-some-module-alpha-skill/`');
+      expect(agentsContent).toContain('</skilio>');
+    });
+  });
+
+  it('replaces existing skilio block and injects module skilio.md', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['cursor']);
+      await fs.writeFile(
+        path.join(root, 'AGENTS.md'),
+        '# Rules\n\n<skilio>\nold content\n</skilio>\n\n## keep\n',
+        'utf-8'
+      );
+
+      const moduleDir = path.join(root, 'node_modules', '@scope', 'mod-a');
+      await writeSkill(path.join(moduleDir, 'skills', 'z-skill'), 'z-skill');
+      await writeSkill(path.join(moduleDir, 'skills', 'a-skill'), 'a-skill');
+      await fs.writeFile(path.join(moduleDir, 'package.json'), JSON.stringify({ name: '@scope/mod-a' }, null, 2), 'utf-8');
+      await fs.writeFile(path.join(moduleDir, 'skilio.md'), 'module docs', 'utf-8');
+
+      await runCli(['scan', '--agent', 'cursor'], root);
+
+      const agentsContent = await fs.readFile(path.join(root, 'AGENTS.md'), 'utf-8');
+      expect(agentsContent).not.toContain('old content');
+      expect(agentsContent).toContain('## @scope/mod-a');
+      expect(agentsContent).toContain('`a-skill` filepath: `skills/npm-@scope-mod-a-a-skill/`');
+      expect(agentsContent).toContain('`z-skill` filepath: `skills/npm-@scope-mod-a-z-skill/`');
+      expect(agentsContent).toContain('module docs');
+      expect(agentsContent).toContain('## keep');
+    });
+  });
 });

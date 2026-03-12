@@ -1,5 +1,15 @@
 # Change Log
 
+## Version 0.0.1-snapshot.7 - 2026-03-12
+
+> Warning: This CLI tool is still work-in-progress
+
+Maintain built-in agent/IDE project rules file mapping (`copilot` uses `.github/copilot-instructions.md`, others fallback to `AGENTS.md`)
+
+Enhance `scan` to sync node_modules skill index into root `AGENTS.md` `<skilio>...</skilio>` block
+
+When module-level `skilio.md` exists next to `package.json`, include its content in the generated index section
+
 ## Version 0.0.1-snapshot.6 - 2026-02-09
 
 > Warning: This CLI tool is still work-in-progress

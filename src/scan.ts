@@ -6,6 +6,19 @@ import { listAllDirsByDir, pathExists } from './utils/fs';
 import { checkSymlink, createSymlink, isSymlinkLike } from './utils/symlink';
 import { scanSkillsFromBase, ScannedSkill, listRootSkills } from './skills';
 
+export type NpmSkillIndexEntry = {
+  moduleName: string;
+  skillName: string;
+  linkName: string;
+  linkPath: string;
+};
+
+export type NpmModuleIndex = {
+  moduleName: string;
+  skills: NpmSkillIndexEntry[];
+  skilioDoc?: string;
+};
+
 // Build link name for npm skills: npm-<pkg>-<skill>
 const getNpmSkillLinkName = (prefix: string, pkgName: string, skillName: string) => {
   const safePkg = pkgName.replace('/', '-');
@@ -15,6 +28,27 @@ const getNpmSkillLinkName = (prefix: string, pkgName: string, skillName: string)
 // Build link name for workspace package skills: package-<pkg>-<skill>
 const getPackageSkillLinkName = (prefix: string, pkgName: string, skillName: string) => {
   return `${prefix}${pkgName}-${skillName}`;
+};
+
+const readSkilioDocByModule = async (moduleDir: string): Promise<string | undefined> => {
+  const packageJsonPath = path.join(moduleDir, 'package.json');
+  if (!(await pathExists(packageJsonPath))) {
+    return undefined;
+  }
+
+  const skilioDocPath = path.join(moduleDir, 'skilio.md');
+  if (!(await pathExists(skilioDocPath))) {
+    return undefined;
+  }
+
+  const content = await fs.readFile(skilioDocPath, 'utf-8');
+  const cleaned = content.trim();
+  return cleaned ? cleaned : undefined;
+};
+
+const toPosixRelativePath = (from: string, to: string) => {
+  const rel = path.relative(from, to);
+  return rel.split(path.sep).join('/');
 };
 
 const scanNodeModules = async (rootDir: string) => {
@@ -64,6 +98,7 @@ export const scanProject = async (rootDir: string, config: SkilioConfig) => {
   const prefixPackage = config.skillLinkPrefixPackage || DEFAULT_PREFIX_PACKAGE;
 
   const scanned: { skill: ScannedSkill; linkName: string }[] = [];
+  const npmModuleDocs = new Map<string, string>();
 
   if (config.scanNpm) {
     const nodeModulesDir = path.join(rootDir, 'node_modules');
@@ -75,6 +110,11 @@ export const scanProject = async (rootDir: string, config: SkilioConfig) => {
           const scoped = await listAllDirsByDir(scopeDir);
           for (const scopedName of scoped) {
             const fullName = `${mod}/${scopedName}`;
+            const moduleDir = path.join(scopeDir, scopedName);
+            const skilioDoc = await readSkilioDocByModule(moduleDir);
+            if (skilioDoc) {
+              npmModuleDocs.set(fullName, skilioDoc);
+            }
             const skills = await scanSkillsFromBase(path.join(scopeDir, scopedName), 'npm', fullName, rootDir);
             for (const skill of skills) {
               scanned.push({
@@ -84,6 +124,11 @@ export const scanProject = async (rootDir: string, config: SkilioConfig) => {
             }
           }
           continue;
+        }
+        const moduleDir = path.join(nodeModulesDir, mod);
+        const skilioDoc = await readSkilioDocByModule(moduleDir);
+        if (skilioDoc) {
+          npmModuleDocs.set(mod, skilioDoc);
         }
         const skills = await scanSkillsFromBase(path.join(nodeModulesDir, mod), 'npm', mod, rootDir);
         for (const skill of skills) {
@@ -173,5 +218,33 @@ export const scanProject = async (rootDir: string, config: SkilioConfig) => {
   }
 
   const rootSkills = await listRootSkills(rootDir);
-  return { rootSkills };
+
+  const npmModuleMap = new Map<string, NpmModuleIndex>();
+  for (const entry of scanned) {
+    if (entry.skill.source !== 'npm') {
+      continue;
+    }
+
+    const current = npmModuleMap.get(entry.skill.sourceName) ?? {
+      moduleName: entry.skill.sourceName,
+      skills: [],
+      skilioDoc: npmModuleDocs.get(entry.skill.sourceName),
+    };
+    current.skills.push({
+      moduleName: entry.skill.sourceName,
+      skillName: entry.skill.name,
+      linkName: entry.linkName,
+      linkPath: `${toPosixRelativePath(rootDir, path.join(rootSkillsDir, entry.linkName))}/`,
+    });
+    npmModuleMap.set(entry.skill.sourceName, current);
+  }
+
+  const npmModules = Array.from(npmModuleMap.values())
+    .map((module) => ({
+      ...module,
+      skills: module.skills.sort((a, b) => a.skillName.localeCompare(b.skillName)),
+    }))
+    .sort((a, b) => a.moduleName.localeCompare(b.moduleName));
+
+  return { rootSkills, npmModules };
 };

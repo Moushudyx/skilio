@@ -7,3 +7,4 @@ export * from './install';
 export * from './update';
 export * from './check';
 export * from './uninstall';
+export * from './rules';

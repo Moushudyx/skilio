@@ -80,3 +80,20 @@
 
 - 不限制最大扫描时间。
 - 扫描过程中输出进度（已扫描项与当前目标），避免无响应感知。
+
+## 项目规则文件索引
+
+- 维护一套智能体/IDE 到项目规则文件路径的内置映射。
+  - 已确认：`copilot -> .github/copilot-instructions.md`
+  - 未确认路径的智能体/IDE 统一回退到 `AGENTS.md`
+- 当前 `scan` 只自动维护根目录 `AGENTS.md`。
+- `scan` 每次执行都要同步 `<skilio>...</skilio>` 区块：
+  - 不存在 `AGENTS.md` 时自动创建。
+  - 不存在 `<skilio></skilio>` 时，在末尾追加固定引导文案和空标签。
+  - 再整体替换 `<skilio>...</skilio>` 的全部内容。
+- `<skilio>` 索引范围仅包含 `node_modules` 扫描得到的技能，不包含 `packages`。
+- 每个模块下按技能名稳定排序输出：
+  - 技能原名（原 skill 文件夹名）
+  - 根目录符号链接路径（`skills/<link-name>/`）
+- 若模块目录下 `package.json` 同级存在 `skilio.md`，将其全文追加到对应模块小节。
+- 文档中的路径分隔符统一输出 `/`，避免平台差异导致文案抖动。

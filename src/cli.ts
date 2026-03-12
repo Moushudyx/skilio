@@ -9,6 +9,7 @@ import { guessAgents } from './agents';
 import { scanProject } from './scan';
 import { listRootSkills, isLocalSkillDir } from './skills';
 import { syncAgentSkills } from './sync';
+import { syncAgentsRuleIndex } from './rules';
 import { installFromSource } from './install';
 import { updateInstalled } from './update';
 import { uninstallFromSource } from './uninstall';
@@ -150,7 +151,8 @@ program
     const agents = resolution.agents;
 
     info('Scanning skills...');
-    const { rootSkills } = await scanProject(rootDir, config);
+    const { rootSkills, npmModules } = await scanProject(rootDir, config);
+    await syncAgentsRuleIndex(rootDir, npmModules);
 
     if (!agents.length) {
       warn('No agent detected. Skipping agent sync. Use --agent or set defaultAgents in config.');

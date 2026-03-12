@@ -20,6 +20,7 @@
 - `createSymlink(source, target)` 创建符号链接；Windows 使用 `junction`
 - `deleteSymlink(path)` 删除符号链接
 - `getAgentConfigDir(agent)` 返回智能体/IDE 配置目录
+- `getAgentRulesFilePath(agent)` 返回智能体/IDE 项目规则文件路径
 - `guessAgent(rootDir)` 推测当前使用的智能体/IDE
   - 依据配置目录是否存在
   - copilot 额外检查 `.github/copilot-instructions.md` 或 `.github/skills/`
@@ -52,6 +53,7 @@
 ## 智能体/IDE 模块 agents
 
 - 内置已知智能体/IDE 列表（名称、配置目录、推测依据）
+- 内置规则文件路径映射（暂未知的统一回退 `AGENTS.md`）
 - OpenClaw 无需配置目录，忽略推测
 - Copilot 需检查 `.github/copilot-instructions.md` 或 `.github/skills/`
 
@@ -82,6 +84,11 @@
   - 读取 `skillDisabled` 跳过被禁用技能
   - 若目标为真实目录则不覆盖，记录 debug 日志并退出
 - 扫描过程输出进度，避免无响应感知
+- `scan` 结束后同步根目录 `AGENTS.md`：
+  - 若文件不存在则创建
+  - 若不存在 `<skilio></skilio>` 则追加引导文案和空标签
+  - 用最新 node_modules 扫描结果整体替换 `<skilio>...</skilio>`
+  - 每个模块附加可选的 `skilio.md`（要求与 `package.json` 同级）
 
 ## 新增模块 init
 
