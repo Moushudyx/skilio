@@ -115,12 +115,14 @@ Run `skilio scan` or simply `skilio` to scan project agent skills and create sym
 
 If invalid skills or name conflicts are discovered, details will be appended to `skilio-debug.log`.
 
-During `scan`, skilio also maintains a project rules index in `AGENTS.md`:
+During `scan`, skilio also maintains a project rules index in the rules file of each detected agent/IDE:
 
-- If `AGENTS.md` does not exist, it will be created.
+- If the target rules file does not exist, it will be created.
 - If `<skilio></skilio>` does not exist, skilio appends a guidance line and an empty tag block.
 - The whole `<skilio>...</skilio>` block is replaced with the latest index from `node_modules` scans.
 - For each module, if `skilio.md` exists next to that module's `package.json`, its content is appended under that module section.
+- If the target rules file is a symlink, skilio skips it and prints a warning to both console and `skilio-debug.log`.
+- If no agent/IDE is detected, skilio falls back to root `AGENTS.md` and prints a warning to both console and `skilio-debug.log`.
 
 ```bash
 # default invocation
@@ -379,9 +381,10 @@ Supported options:
 skilio now maintains a built-in mapping from agent/IDE to a project rules file path.
 
 - `copilot` uses `.github/copilot-instructions.md` as its known rules file path.
-- Other agents currently fall back to root `AGENTS.md` when no stable public rules-file path is confirmed.
+- Some agents use dedicated files such as `.trae/rules/repo.md`, `CLAUDE.md`, `QWEN.md`, `GEMINI.md`, and `.zencoder/rules/repo.md`.
+- Agents without a confirmed dedicated path currently fall back to root `AGENTS.md`.
 
-Current `scan` implementation only updates root `AGENTS.md`.
+`scan` updates the rules files of detected agents/IDEs. When no agent/IDE is detected, it falls back to root `AGENTS.md`.
 
 ## Supported Agents/IDEs
 

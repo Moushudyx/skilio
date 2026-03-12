@@ -1,7 +1,11 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { AgentId, getAgentRulesFilePath } from './constants/agents';
 import { NpmModuleIndex } from './scan';
+import { appendDebugLog } from './debug';
 import { pathExists } from './utils/fs';
+import { warn } from './utils/log';
+import { isSymlinkLike } from './utils/symlink';
 
 const SKILIO_TAG_REGEX = /(^|\r?\n)<skilio>[\s\S]*?<\/skilio>/gi;
 const DEFAULT_RULES_FILE = 'AGENTS.md';
@@ -42,21 +46,59 @@ const renderSkilioBlock = (modules: NpmModuleIndex[]) => {
   return lines.join('\n');
 };
 
-export const syncAgentsRuleIndex = async (rootDir: string, modules: NpmModuleIndex[]) => {
-  const agentsPath = path.join(rootDir, DEFAULT_RULES_FILE);
-  const exists = await pathExists(agentsPath);
-  const original = exists ? await fs.readFile(agentsPath, 'utf-8') : '';
-  const withTag = ensureSkilioTag(original);
+const getRuleTargetPaths = (agents: AgentId[]) => {
+  if (!agents.length) {
+    return [DEFAULT_RULES_FILE];
+  }
+
+  return Array.from(new Set(agents.map((agent) => getAgentRulesFilePath(agent) || DEFAULT_RULES_FILE)));
+};
+
+const replaceSkilioBlock = (content: string, modules: NpmModuleIndex[]) => {
+  const withTag = ensureSkilioTag(content);
   const block = renderSkilioBlock(modules);
-  const next = withTag.replace(SKILIO_TAG_REGEX, (_, prefix: string) => `${prefix}${block}`);
+  return withTag.replace(SKILIO_TAG_REGEX, (_, prefix: string) => `${prefix}${block}`);
+};
+
+const syncOneRulesFile = async (rootDir: string, filePath: string, modules: NpmModuleIndex[]) => {
+  const fullPath = path.join(rootDir, filePath);
+  const exists = await pathExists(fullPath);
+
+  if (exists && (await isSymlinkLike(fullPath))) {
+    const message = `Skip rules file update because target is a symlink: ${filePath}`;
+    warn(message);
+    await appendDebugLog(rootDir, message);
+    return;
+  }
+
+  await fs.mkdir(path.dirname(fullPath), { recursive: true });
+  const original = exists ? await fs.readFile(fullPath, 'utf-8') : '';
+  const next = replaceSkilioBlock(original, modules);
 
   if (next === original) {
     return;
   }
-  await fs.writeFile(agentsPath, next, 'utf-8');
+  await fs.writeFile(fullPath, next, 'utf-8');
+};
+
+export const syncAgentsRuleIndex = async (rootDir: string, modules: NpmModuleIndex[], detectedAgents: AgentId[]) => {
+  const targets = getRuleTargetPaths(detectedAgents);
+
+  if (!detectedAgents.length) {
+    const message = `No agent detected. Writing rules index to ${DEFAULT_RULES_FILE}.`;
+    warn(message);
+    await appendDebugLog(rootDir, message);
+  }
+
+  for (const target of targets) {
+    // Rules files are regular markdown files; do not attempt file symlink management on Windows.
+    await syncOneRulesFile(rootDir, target, modules);
+  }
 };
 
 export const __testOnly = {
   ensureSkilioTag,
+  getRuleTargetPaths,
+  replaceSkilioBlock,
   renderSkilioBlock,
 };

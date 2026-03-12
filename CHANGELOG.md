@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 0.0.1-snapshot.8 - 2026-03-12
+
+> Warning: This CLI tool is still work-in-progress
+
+Upgrade built-in agent/IDE project rules file mapping
+
+Skip rules file updates when the target file is a symlink, and emit warnings to both console and `skilio-debug.log`
+
 ## Version 0.0.1-snapshot.7 - 2026-03-12
 
 > Warning: This CLI tool is still work-in-progress

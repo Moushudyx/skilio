@@ -152,7 +152,7 @@ program
 
     info('Scanning skills...');
     const { rootSkills, npmModules } = await scanProject(rootDir, config);
-    await syncAgentsRuleIndex(rootDir, npmModules);
+    await syncAgentsRuleIndex(rootDir, npmModules, resolution.knownAgents);
 
     if (!agents.length) {
       warn('No agent detected. Skipping agent sync. Use --agent or set defaultAgents in config.');

@@ -20,5 +20,10 @@ describe('agents constants', () => {
   it('exposes rules file mapping with copilot override', () => {
     expect(getAgentRulesFilePath('cursor')).toBe('AGENTS.md');
     expect(getAgentRulesFilePath('copilot')).toBe('.github/copilot-instructions.md');
+    expect(getAgentRulesFilePath('trae')).toBe('.trae/rules/repo.md');
+    expect(getAgentRulesFilePath('claude')).toBe('CLAUDE.md');
+    expect(getAgentRulesFilePath('qwen')).toBe('QWEN.md');
+    expect(getAgentRulesFilePath('gemini')).toBe('GEMINI.md');
+    expect(getAgentRulesFilePath('zencoder')).toBe('.zencoder/rules/repo.md');
   });
 });

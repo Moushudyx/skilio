@@ -231,4 +231,52 @@ describe('scan e2e', () => {
       expect(agentsContent).toContain('## keep');
     });
   });
+
+  it('writes rules index to detected agent rule files', async () => {
+    await withTempWorkspace(async (root) => {
+      await fs.mkdir(path.join(root, '.github', 'skills'), { recursive: true });
+
+      await writeSkill(path.join(root, 'node_modules', 'copilot-module', 'skills', 'copilot-skill'), 'copilot-skill');
+
+      await runCli(['scan', '--no-prompt'], root);
+
+      const copilotRulesPath = path.join(root, '.github', 'copilot-instructions.md');
+      expect(await exists(copilotRulesPath)).toBe(true);
+      expect(await exists(path.join(root, 'AGENTS.md'))).toBe(false);
+
+      const content = await fs.readFile(copilotRulesPath, 'utf-8');
+      expect(content).toContain('## copilot-module');
+      expect(content).toContain('`copilot-skill` filepath: `skills/npm-copilot-module-copilot-skill/`');
+    });
+  });
+
+  it('falls back to AGENTS.md and warns when no agents are detected', async () => {
+    await withTempWorkspace(async (root) => {
+      await writeSkill(path.join(root, 'node_modules', 'fallback-module', 'skills', 'fallback-skill'), 'fallback-skill');
+
+      const result = await runCli(['scan', '--no-prompt'], root);
+
+      expect(result.stderr).toContain('No agent detected. Writing rules index to AGENTS.md.');
+      expect(await exists(path.join(root, 'AGENTS.md'))).toBe(true);
+
+      const debugLog = await fs.readFile(path.join(root, 'skilio-debug.log'), 'utf-8');
+      expect(debugLog).toContain('No agent detected. Writing rules index to AGENTS.md.');
+    });
+  });
+
+  it('warns and skips rules update when target file is a symlink', async () => {
+    await withTempWorkspace(async (root) => {
+      const sourceDir = path.join(root, 'linked-rules-source');
+      await fs.mkdir(sourceDir, { recursive: true });
+      await fs.symlink(sourceDir, path.join(root, 'AGENTS.md'), 'junction');
+
+      await writeSkill(path.join(root, 'node_modules', 'symlink-module', 'skills', 'symlink-skill'), 'symlink-skill');
+
+      const result = await runCli(['scan', '--no-prompt'], root);
+
+      expect(result.stderr).toContain('Skip rules file update because target is a symlink: AGENTS.md');
+      const debugLog = await fs.readFile(path.join(root, 'skilio-debug.log'), 'utf-8');
+      expect(debugLog).toContain('Skip rules file update because target is a symlink: AGENTS.md');
+    });
+  });
 });

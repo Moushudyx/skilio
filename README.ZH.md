@@ -115,12 +115,14 @@ root/
 
 若扫描到无效技能或同名冲突，将追加写入 `skilio-debug.log`
 
-执行 `scan` 时，skilio 还会维护根目录下的 `AGENTS.md` 规则索引：
+执行 `scan` 时，skilio 还会维护检测到的智能体/IDE 对应项目规则文件中的索引：
 
-- 若不存在 `AGENTS.md`，会自动创建
+- 若目标规则文件不存在，会自动创建
 - 若不存在 `<skilio></skilio>`，会在文件末尾追加引导文案与空标签
 - 每次 `scan` 都会整体替换 `<skilio>...</skilio>` 区块，写入最新的 `node_modules` 扫描索引
 - 对每个模块，如果其 `package.json` 同级存在 `skilio.md`，会将该文件内容追加到该模块小节下
+- 若目标规则文件本身是符号链接，则会跳过处理，并同时输出控制台警告和 `skilio-debug.log`
+- 若没有检测到任何智能体/IDE，则回退写入根目录 `AGENTS.md`，并同时输出控制台警告和 `skilio-debug.log`
 
 ```bash
 # 默认参数调用
@@ -387,9 +389,10 @@ skilio config skillLinkPrefixPackage pkg- # 将 skillLinkPrefixPackage 配置项
 skilio 维护了一套内置的“智能体/IDE -> 项目规则文件路径”映射：
 
 - `copilot` 使用 `.github/copilot-instructions.md` 作为已知规则文件路径
-- 其他智能体/IDE 在暂未确认公开规则文件路径时，统一回退到根目录 `AGENTS.md`
+- 部分智能体使用独立规则文件，例如 `.trae/rules/repo.md`、`CLAUDE.md`、`QWEN.md`、`GEMINI.md`、`.zencoder/rules/repo.md`
+- 暂未确认独立规则文件路径的智能体/IDE，统一回退到根目录 `AGENTS.md`
 
-当前 `scan` 仅会自动更新根目录 `AGENTS.md`
+`scan` 会更新检测到的智能体/IDE 对应规则文件；若未检测到任何智能体/IDE，则回退到根目录 `AGENTS.md`
 
 ## 支持的智能体/IDE
 

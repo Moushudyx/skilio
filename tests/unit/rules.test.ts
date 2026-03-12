@@ -37,4 +37,13 @@ describe('rules helpers', () => {
     expect(block).toContain('extra docs');
     expect(block).toContain('</skilio>');
   });
+
+  it('resolves detected agent rule targets with dedupe and fallback', () => {
+    expect(__testOnly.getRuleTargetPaths(['cursor', 'windsurf'])).toEqual(['AGENTS.md']);
+    expect(__testOnly.getRuleTargetPaths(['copilot', 'cursor'])).toEqual([
+      '.github/copilot-instructions.md',
+      'AGENTS.md',
+    ]);
+    expect(__testOnly.getRuleTargetPaths([])).toEqual(['AGENTS.md']);
+  });
 });

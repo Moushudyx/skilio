@@ -85,12 +85,14 @@
 
 - 维护一套智能体/IDE 到项目规则文件路径的内置映射。
   - 已确认：`copilot -> .github/copilot-instructions.md`
+  - 其他已确认路径：`trae -> .trae/rules/repo.md`、`claude -> CLAUDE.md`、`qwen -> QWEN.md`、`gemini -> GEMINI.md`、`zencoder -> .zencoder/rules/repo.md`
   - 未确认路径的智能体/IDE 统一回退到 `AGENTS.md`
-- 当前 `scan` 只自动维护根目录 `AGENTS.md`。
+- `scan` 按检测到的智能体/IDE 更新对应规则文件；若未检测到任何智能体/IDE，则回退到 `AGENTS.md` 并输出控制台警告与 debug 日志。
 - `scan` 每次执行都要同步 `<skilio>...</skilio>` 区块：
-  - 不存在 `AGENTS.md` 时自动创建。
+  - 目标规则文件不存在时自动创建。
   - 不存在 `<skilio></skilio>` 时，在末尾追加固定引导文案和空标签。
   - 再整体替换 `<skilio>...</skilio>` 的全部内容。
+- 若目标规则文件是符号链接，则跳过处理，并输出控制台警告与 debug 日志。
 - `<skilio>` 索引范围仅包含 `node_modules` 扫描得到的技能，不包含 `packages`。
 - 每个模块下按技能名稳定排序输出：
   - 技能原名（原 skill 文件夹名）
