@@ -79,7 +79,8 @@ When you run `skilio`, it will:
 3. Create symbolic links for the discovered skills into the root `skills/` directory.
 4. Based on `.github/copilot-instructions.md`, infer GitHub Copilot usage and link the root `skills/` into `.github/skills/`.
 5. If `.cursor/` exists, infer Cursor usage and link the root `skills/` into `.cursor/skills/` as well.
-6. Clean up broken skill symlinks.
+6. If `.devin/` exists, infer Devin usage and link the root `skills/` into `.devin/skills/` as well.
+7. Clean up broken skill symlinks.
 
 After execution the project may look like:
 

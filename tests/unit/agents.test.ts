@@ -7,14 +7,17 @@ describe('agents constants', () => {
     const ids = getAllAgentIds();
     expect(ids.includes('cursor')).toBe(true);
     expect(ids.includes('trae')).toBe(true);
+    expect(ids.includes('devin')).toBe(true);
     expect(ids.includes('qoder')).toBe(true);
   });
 
   it('agent map resolves config dirs', () => {
     const cursor = AGENT_MAP.get('cursor');
     const trae = AGENT_MAP.get('trae');
+    const devin = AGENT_MAP.get('devin');
     expect(cursor?.configDir).toBe('.cursor/skills');
     expect(trae?.configDir).toBe('.trae/skills');
+    expect(devin?.configDir).toBe('.devin/skills');
   });
 
   it('exposes rules file mapping with copilot override', () => {
@@ -25,5 +28,6 @@ describe('agents constants', () => {
     expect(getAgentRulesFilePath('qwen')).toBe('QWEN.md');
     expect(getAgentRulesFilePath('gemini')).toBe('GEMINI.md');
     expect(getAgentRulesFilePath('zencoder')).toBe('.zencoder/rules/repo.md');
+    expect(getAgentRulesFilePath('devin')).toBe('AGENTS.md');
   });
 });
