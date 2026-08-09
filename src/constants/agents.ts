@@ -2,6 +2,7 @@ export type AgentId =
   | 'cursor'
   | 'copilot'
   | 'windsurf'
+  | 'devin'
   | 'trae'
   | 'claude'
   | 'openclaw'
@@ -47,6 +48,13 @@ export const AGENTS: AgentInfo[] = [
     configDir: '.windsurf/skills',
     rulesFilePath: 'AGENTS.md',
     guessBy: { dir: '.windsurf' },
+  },
+  {
+    id: 'devin',
+    name: 'Devin',
+    configDir: '.devin/skills',
+    rulesFilePath: 'AGENTS.md',
+    guessBy: { dir: '.devin' },
   },
   {
     id: 'trae',

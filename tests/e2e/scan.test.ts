@@ -46,6 +46,19 @@ describe('scan e2e', () => {
     });
   });
 
+  it('detects Devin and syncs skills to .devin/skills', async () => {
+    await withTempWorkspace(async (root) => {
+      await ensureAgentDirs(root, ['devin']);
+      await writeSkill(path.join(root, 'skills', 'local-skill'), 'local-skill');
+
+      await runCli(['scan', '--no-prompt'], root);
+
+      const devinSkills = await readDirNames(path.join(root, '.devin', 'skills'));
+      expect(devinSkills).toEqual(['local-skill']);
+      expect(await exists(path.join(root, 'AGENTS.md'))).toBe(true);
+    });
+  });
+
   it('warns and exits when no agents and prompts are disabled', async () => {
     await withTempWorkspace(async (root) => {
       const result = await runCli(['scan', '--no-prompt'], root);

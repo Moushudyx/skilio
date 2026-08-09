@@ -79,7 +79,8 @@ root/
 3. 将上述发现的技能文件夹**符号链接**到根目录下的 `skills/` 目录中
 4. 根据 `.github/copilot-instructions.md` ***推测***用户正在使用 GitHub Copilot，将根目录下的 `skills/` 中所有技能符号链接到 `.github/skills/` 目录中
 5. 根据 `.cursor/` 目录**推测**用户也在使用 Cursor，将根目录下的 `skills/` 中所有技能符号链接到 `.cursor/skills/` 目录中
-6. 清理失效的技能符号链接
+6. 根据 `.devin/` 目录**推测**用户也在使用 Devin，将根目录下的 `skills/` 中所有技能符号链接到 `.devin/skills/` 目录中
+7. 清理失效的技能符号链接
 
 执行结束后，项目结构将变为：
 
